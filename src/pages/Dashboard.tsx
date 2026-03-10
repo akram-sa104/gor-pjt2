@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2 } from "lucide-react";
+import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
@@ -16,9 +17,11 @@ const statusConfig = {
   cancelled: { label: "Dibatalkan", className: "bg-muted text-muted-foreground" },
 };
 
+type TabKey = "riwayat" | "pengaturan";
 const Dashboard = () => {
     const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<TabKey>("riwayat");
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +47,107 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/");
+
+      };
+  const renderContent = () => {
+    if (activeTab === "pengaturan") {
+      return (
+        <>
+          <h1 className="text-2xl font-bold text-foreground mb-6">Pengaturan</h1>
+          <div className="space-y-6">
+            <div className="bg-card rounded-xl shadow-corporate p-6">
+              <h2 className="font-semibold text-foreground mb-4">Profil Saya</h2>
+              <div className="space-y-4 max-w-md">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Nama</label>
+                  <Input defaultValue={user?.name || ""} disabled />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
+                  <Input defaultValue={user?.email || ""} disabled />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">No. Telepon</label>
+                  <Input defaultValue={user?.phone || ""} disabled />
+                </div>
+              </div>
+            </div>
+            <div className="bg-card rounded-xl shadow-corporate p-6">
+              <h2 className="font-semibold text-foreground mb-4">Keamanan</h2>
+              <p className="text-sm text-muted-foreground">Fitur ubah password akan segera hadir.</p>
+            </div>
+          </div>
+        </>
+      );
+    }
+    return (
+      <>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Dashboard</h1>
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-card rounded-xl p-4 shadow-corporate">
+            <p className="text-sm text-muted-foreground">Total Booking</p>
+            <p className="text-2xl font-bold text-foreground">{bookings.length}</p>
+          </div>
+          <div className="bg-card rounded-xl p-4 shadow-corporate">
+            <p className="text-sm text-muted-foreground">Disetujui</p>
+            <p className="text-2xl font-bold text-success">{bookings.filter(b => b.status === "approved").length}</p>
+          </div>
+          <div className="bg-card rounded-xl p-4 shadow-corporate">
+            <p className="text-sm text-muted-foreground">Pending</p>
+            <p className="text-2xl font-bold text-warning">{bookings.filter(b => b.status === "pending").length}</p>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl shadow-corporate overflow-hidden">
+          <div className="p-4 border-b border-border">
+            <h2 className="font-semibold text-foreground">Riwayat Booking</h2>
+          </div>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : bookings.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Belum ada booking. <Link to="/booking" className="text-primary hover:underline">Buat booking sekarang</Link></p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-secondary">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lapangan</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tanggal</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Jam</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((b) => (
+                    <tr key={b.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                      <td className="py-3 px-4 text-foreground font-medium">{b.court_name}</td>
+                      <td className="py-3 px-4 text-foreground flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{b.booking_date.slice(0, 10)}</td>
+                      <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
+                          {statusConfig[b.status]?.label || b.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {b.status === "pending" && (
+                          <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
+                            <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
   };
 
   return (
@@ -66,12 +170,25 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <nav className="space-y-1">
-                  <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/10 text-primary">
+                      <button
+                    onClick={() => setActiveTab("riwayat")}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "riwayat" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
                     <History className="h-4 w-4" /> Riwayat Booking
                   </button>
                   <Link to="/booking" className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">
                     <CalendarDays className="h-4 w-4" /> Booking Baru
                   </Link>
+                   <button
+                    onClick={() => setActiveTab("pengaturan")}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "pengaturan" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Settings className="h-4 w-4" /> Pengaturan
+                  </button>
                          <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">
                     <LogOut className="h-4 w-4" /> Keluar
                   </button>
@@ -81,72 +198,7 @@ const Dashboard = () => {
 
             {/* Main */}
             <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground mb-6">Dashboard</h1>
-
-              <div className="grid sm:grid-cols-3 gap-4 mb-8">
-                <div className="bg-card rounded-xl p-4 shadow-corporate">
-                  <p className="text-sm text-muted-foreground">Total Booking</p>
-                  <p className="text-2xl font-bold text-foreground">{bookings.length}</p>
-                </div>
-                <div className="bg-card rounded-xl p-4 shadow-corporate">
-                  <p className="text-sm text-muted-foreground">Disetujui</p>
-                  <p className="text-2xl font-bold text-success">{bookings.filter(b => b.status === "approved").length}</p>
-                </div>
-                <div className="bg-card rounded-xl p-4 shadow-corporate">
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-warning">{bookings.filter(b => b.status === "pending").length}</p>
-                </div>
-              </div>
-
-              <div className="bg-card rounded-xl shadow-corporate overflow-hidden">
-                <div className="p-4 border-b border-border">
-                  <h2 className="font-semibold text-foreground">Riwayat Booking</h2>
-                </div>
-                              {loading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : bookings.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p>Belum ada booking. <Link to="/booking" className="text-primary hover:underline">Buat booking sekarang</Link></p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-secondary">
-                          <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lapangan</th>
-                          <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tanggal</th>
-                          <th className="text-left py-3 px-4 font-medium text-muted-foreground">Jam</th>
-                          <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-                          <th className="text-left py-3 px-4 font-medium text-muted-foreground">Aksi</th>
-                        </tr>
-                                    </thead>
-                      <tbody>
-                        {bookings.map((b) => (
-                          <tr key={b.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                            <td className="py-3 px-4 text-foreground font-medium">{b.court_name}</td>
-                            <td className="py-3 px-4 text-foreground flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{b.booking_date.slice(0, 10)}</td>
-                            <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)}</td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
-                                {statusConfig[b.status]?.label || b.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              {b.status === "pending" && (
-                                <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
-                                  <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              {renderContent()}
             </motion.main>
           </div>
         </div>

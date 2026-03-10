@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +28,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isHome = location.pathname === "/";
+  const showBackButton = !isHome;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -41,6 +42,9 @@ const Navbar = () => {
       const id = href.replace("/#", "");
       if (isHome) {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+          } else {
+        // Navigate to home page with hash
+        navigate("/" + "#" + id);
       }
     }
   };
@@ -54,19 +58,36 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
       <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4">
-        <Link to="/" className={`font-bold text-lg md:text-xl tracking-tight ${textColor} transition-colors`}>
+                <div className="flex items-center gap-2">
+          {showBackButton && (
+            <button
+              onClick={() => navigate(-1)}
+              className={`${textColor} hover:bg-primary/10 p-2 rounded-md transition-colors`}
+              aria-label="Kembali"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
+          <Link to="/" className={`font-bold text-lg md:text-xl tracking-tight ${textColor} transition-colors`}>
           <img src="public/Logo-Perum-Jasa-Tirta-II.png" alt="GOR Jasa Tirta II Logo" className="w-10 h-10 object-contain mr-2" />
-          <span className="text-gradient font-extrabold">GOR</span>{" "}
-          <span className={scrolled || !isHome ? "text-foreground" : "text-primary-foreground"}>Jasa Tirta II</span>
-        </Link>
+            <span className="text-gradient font-extrabold">GOR</span>{" "}
+            <span className={scrolled || !isHome ? "text-foreground" : "text-primary-foreground"}>Jasa Tirta II</span>
+          </Link>
+        </div>
+
 
         {/* Desktop */}
         <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              to={link.href.startsWith("/#") && !isHome ? `/${link.href}` : link.href}
-              onClick={() => handleNavClick(link.href)}
+                to={link.href.startsWith("/#") ? "/" : link.href}
+              onClick={(e) => {
+                if (link.href.startsWith("/#")) {
+                  e.preventDefault();
+                  handleNavClick(link.href);
+                }
+              }}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-primary/10 ${textColor}`}
             >
               {link.label}
@@ -126,8 +147,15 @@ const Navbar = () => {
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  to={link.href.startsWith("/#") && !isHome ? `/${link.href}` : link.href}
-                  onClick={() => handleNavClick(link.href)}
+                      to={link.href.startsWith("/#") ? "/" : link.href}
+                  onClick={(e) => {
+                    if (link.href.startsWith("/#")) {
+                      e.preventDefault();
+                      handleNavClick(link.href);
+                    } else {
+                      setMobileOpen(false);
+                    }
+                  }}
                   className="px-3 py-3 rounded-md text-sm font-medium text-foreground hover:bg-secondary transition-colors"
                 >
                   {link.label}

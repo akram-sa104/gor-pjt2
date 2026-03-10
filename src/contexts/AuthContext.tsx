@@ -3,7 +3,7 @@ import { api, User } from '@/lib/api';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: { name: string; email: string; phone: string; password: string }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -29,11 +29,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .finally(() => setIsLoading(false));
     }
   }, [token]);
-  const login = async (email: string, password: string) => {
+   const login = async (email: string, password: string): Promise<User> => {
     const res = await api.login(email, password);
     localStorage.setItem('token', res.token);
     setToken(res.token);
     setUser(res.user);
+    return res.user;
   };
   const register = async (data: { name: string; email: string; phone: string; password: string }) => {
     await api.register(data);

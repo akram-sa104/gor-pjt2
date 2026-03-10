@@ -22,9 +22,9 @@ const Login = () => {
     e.preventDefault();
    setLoading(true);
     try {
-      await login(email, password);
+       const res = await login(email, password);
       toast.success("Login berhasil!");
-      navigate("/dashboard");
+       navigate(res?.role === "admin" ? "/admin" : "/dashboard");
     } catch (err: any) {
       toast.error(err.message || "Login gagal");
     } finally {
