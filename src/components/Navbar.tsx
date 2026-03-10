@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { label: "Home", href: "/#home" },
@@ -17,6 +25,8 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isHome = location.pathname === "/";
 
   useEffect(() => {
@@ -65,12 +75,36 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          <Link to="/login">
-            <Button variant="ghost" className={`${textColor} hover:bg-primary/10`}>Login</Button>
-          </Link>
-          <Link to="/register">
-            <Button className="gradient-primary text-primary-foreground hover:opacity-90">Register</Button>
-          </Link>
+            {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={`${textColor} hover:bg-primary/10 gap-2`}>
+                  <User size={18} />
+                  {user.name}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(user.role === 'admin' ? '/admin' : '/dashboard')}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" className={`${textColor} hover:bg-primary/10`}>Login</Button>
+              </Link>
+              <Link to="/register">
+                <Button className="gradient-primary text-primary-foreground hover:opacity-90">Register</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -99,14 +133,25 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex gap-2 mt-3">
-                <Link to="/login" className="flex-1">
-                  <Button variant="outline" className="w-full">Login</Button>
-                </Link>
-                <Link to="/register" className="flex-1">
-                  <Button className="w-full gradient-primary text-primary-foreground">Register</Button>
-                </Link>
-              </div>
+               {user ? (
+                <div className="flex flex-col gap-2 mt-3">
+                  <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full gap-2"><LayoutDashboard size={16} /> Dashboard</Button>
+                  </Link>
+                  <Button variant="destructive" className="w-full gap-2" onClick={() => { logout(); navigate('/'); setMobileOpen(false); }}>
+                    <LogOut size={16} /> Logout
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2 mt-3">
+                  <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full">Login</Button>
+                  </Link>
+                  <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button className="w-full gradient-primary text-primary-foreground">Register</Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
