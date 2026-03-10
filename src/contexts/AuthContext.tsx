@@ -6,12 +6,24 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   register: (data: { name: string; email: string; phone: string; password: string }) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: User) => void;
   isLoading: boolean;
 }
 const AuthContext = createContext<AuthContextType | null>(null);
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+    if (!ctx) {
+    // Return a safe default when used outside AuthProvider (e.g., during HMR)
+    return {
+      user: null,
+      token: null,
+      login: async () => { throw new Error('AuthProvider not found'); },
+      register: async () => { throw new Error('AuthProvider not found'); },
+      logout: () => {},
+      updateUser: () => {},
+      isLoading: false,
+    } as AuthContextType;
+  }
   return ctx;
 };
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -44,8 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
   };
+   const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+     <AuthContext.Provider value={{ user, token, login, register, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

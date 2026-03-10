@@ -62,7 +62,7 @@ const Login = () => {
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="rounded border-border" />
                 <span className="text-muted-foreground">Ingat saya</span>
               </label>
-              <a href="#" className="text-primary hover:underline font-medium">Lupa password?</a>
+              <Link to="/forgot-password" className="text-primary hover:underline font-medium">Lupa password?</Link>
             </div>
            <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground hover:opacity-90 h-11">
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

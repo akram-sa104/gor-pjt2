@@ -9,6 +9,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, AdminBookingItem, AdminStats } from "@/lib/api";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
+import EditProfileForm from "@/components/EditProfileForm";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -249,23 +251,8 @@ const AdminDashboard = () => {
           <>
             <h1 className="text-2xl font-bold text-foreground mb-6">Pengaturan</h1>
             <div className="space-y-6">
-              <div className="bg-card rounded-xl shadow-corporate p-6">
-                <h2 className="font-semibold text-foreground mb-4">Profil Admin</h2>
-                <div className="space-y-4 max-w-md">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Nama</label>
-                    <Input defaultValue={user?.name || ""} disabled />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
-                    <Input defaultValue={user?.email || ""} disabled />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-card rounded-xl shadow-corporate p-6">
-                <h2 className="font-semibold text-foreground mb-4">Pengaturan Umum</h2>
-                <p className="text-sm text-muted-foreground">Fitur pengaturan lanjutan akan segera hadir.</p>
-              </div>
+             <EditProfileForm />
+             <ChangePasswordForm />
             </div>
           </>
         );

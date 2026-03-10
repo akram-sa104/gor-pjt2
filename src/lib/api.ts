@@ -50,6 +50,29 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   getStats: () => request<AdminStats>('/bookings/stats'),
+
+    changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/auth/change-password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
+     updateProfile: (data: { name: string; phone: string }) =>
+    request<User>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    }),
+
   // Contact
   sendContact: (data: { name: string; email: string; subject?: string; message: string }) =>
     request<{ message: string }>('/contact', {
