@@ -201,4 +201,36 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// ==================== GET ALL USERS (Admin) ====================
+router.get('/users', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Akses ditolak' });
+    }
+    const [users] = await pool.query(
+      'SELECT id, name, email, phone, role, created_at FROM users ORDER BY created_at DESC'
+    );
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+// ==================== DELETE USER (Admin) ====================
+router.delete('/users/:id', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Akses ditolak' });
+    }
+    const userId = req.params.id;
+    // Prevent deleting self
+    if (parseInt(userId) === req.user.id) {
+      return res.status(400).json({ message: 'Tidak bisa menghapus akun sendiri' });
+    }
+    await pool.query('DELETE FROM users WHERE id = ?', [userId]);
+    res.json({ message: 'User berhasil dihapus' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

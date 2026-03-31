@@ -79,6 +79,25 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+      // Users (Admin)
+  getAllUsers: () => request<UserItem[]>('/auth/users'),
+  deleteUser: (id: number) =>
+    request<{ message: string }>(`/auth/users/${id}`, { method: 'DELETE' }),
+  // Gallery (Admin)
+  getGallery: () => request<GalleryItem[]>('/gallery'),
+  addGallery: (data: { title: string; image_url: string; category: string }) =>
+    request<{ message: string; id: number }>('/gallery', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateGallery: (id: number, data: { title: string; image_url: string; category: string }) =>
+    request<{ message: string }>(`/gallery/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteGallery: (id: number) =>
+    request<{ message: string }>(`/gallery/${id}`, { method: 'DELETE' }),
 };
 // Types
 export interface User {
@@ -116,4 +135,19 @@ export interface AdminStats {
   approvedBookings: number;
   totalUsers: number;
   monthlyBookings: { month: string; count: number }[];
+}
+export interface UserItem {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'user' | 'admin';
+  created_at: string;
+}
+export interface GalleryItem {
+  id: number;
+  title: string;
+  image_url: string;
+  category: 'lapangan' | 'tribun' | 'exterior' | 'fasilitas';
+  created_at: string;
 }

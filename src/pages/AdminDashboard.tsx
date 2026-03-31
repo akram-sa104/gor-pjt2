@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api, AdminBookingItem, AdminStats } from "@/lib/api";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import EditProfileForm from "@/components/EditProfileForm";
+import AdminUserList from "@/components/AdminUserList";
+import AdminGalleryManager from "@/components/AdminGalleryManager";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -189,27 +191,9 @@ const AdminDashboard = () => {
           </>
         );
       case "galeri":
-        return (
-          <>
-            <h1 className="text-2xl font-bold text-foreground mb-6">Kelola Galeri</h1>
-            <div className="bg-card rounded-xl shadow-corporate p-8 text-center">
-              <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Fitur kelola galeri akan segera hadir.</p>
-              <p className="text-sm text-muted-foreground mt-1">Anda akan bisa menambah, mengedit, dan menghapus foto galeri GOR.</p>
-            </div>
-          </>
-        );
+         return <AdminGalleryManager />;
       case "users":
-        return (
-          <>
-            <h1 className="text-2xl font-bold text-foreground mb-6">Data User</h1>
-            <div className="bg-card rounded-xl shadow-corporate p-8 text-center">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Fitur manajemen user akan segera hadir.</p>
-              <p className="text-sm text-muted-foreground mt-1">Anda akan bisa melihat dan mengelola data pengguna terdaftar.</p>
-            </div>
-          </>
-        );
+         return <AdminUserList />;
       case "statistik":
         return (
           <>

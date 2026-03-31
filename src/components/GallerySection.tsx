@@ -1,29 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-
+import { X, Loader2 } from "lucide-react";
+import { api, GalleryItem } from "@/lib/api";
+// Fallback images if API fails
 import futsalImg from "@/assets/futsal-court.jpg";
 import badmintonImg from "@/assets/badminton-court.jpg";
 import tribuneImg from "@/assets/tribune.jpg";
 import exteriorImg from "@/assets/exterior-gor.jpg";
 import heroImg from "@/assets/hero-gor.jpg";
 
-const images = [
-  { src: futsalImg, title: "Lapangan Futsal", category: "Lapangan Utama" },
-  { src: badmintonImg, title: "Lapangan Badminton", category: "Lapangan Utama" },
-  { src: tribuneImg, title: "Tribun Penonton", category: "Tribun" },
-  { src: exteriorImg, title: "Eksterior GOR", category: "Area Luar" },
-  { src: heroImg, title: "Tampak Depan GOR", category: "Area Luar" },
-  { src: futsalImg, title: "Lapangan Indoor", category: "Fasilitas Dalam" },
+const fallbackImages = [
+  { src: futsalImg, title: "Lapangan Futsal", category: "lapangan" },
+  { src: badmintonImg, title: "Lapangan Badminton", category: "lapangan" },
+  { src: tribuneImg, title: "Tribun Penonton", category: "tribun" },
+  { src: exteriorImg, title: "Eksterior GOR", category: "exterior" },
+  { src: heroImg, title: "Tampak Depan GOR", category: "exterior" },
 ];
 
-const categories = ["Semua", "Lapangan Utama", "Tribun", "Area Luar", "Fasilitas Dalam"];
+const categoryLabels: Record<string, string> = {
+  lapangan: "Lapangan",
+  tribun: "Tribun",
+  exterior: "Exterior",
+  fasilitas: "Fasilitas",
+};
+const getImageSrc = (url: string) => {
+  if (url.startsWith("http")) return url;
+  const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
+  return `${baseUrl}${url}`;
+};
 
 const GallerySection = () => {
   const [filter, setFilter] = useState("Semua");
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [galleryItems, setGalleryItems] = useState<{ src: string; title: string; category: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>(["Semua"]);
 
-  const filtered = filter === "Semua" ? images : images.filter((img) => img.category === filter);
+ useEffect(() => {
+    api.getGallery()
+      .then((items: GalleryItem[]) => {
+        if (items.length > 0) {
+          const mapped = items.map((item) => ({
+            src: getImageSrc(item.image_url),
+            title: item.title || "Tanpa judul",
+            category: item.category,
+          }));
+          setGalleryItems(mapped);
+          const uniqueCats = ["Semua", ...Array.from(new Set(items.map((i) => i.category)))];
+          setCategories(uniqueCats);
+        } else {
+          setGalleryItems(fallbackImages);
+          setCategories(["Semua", "lapangan", "tribun", "exterior"]);
+        }
+      })
+      .catch(() => {
+        setGalleryItems(fallbackImages);
+        setCategories(["Semua", "lapangan", "tribun", "exterior"]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+  const filtered = filter === "Semua" ? galleryItems : galleryItems.filter((img) => img.category === filter);
 
   return (
     <section id="galeri" className="py-20 bg-background">
@@ -50,36 +86,43 @@ const GallerySection = () => {
                   : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
-              {cat}
+               {cat === "Semua" ? "Semua" : categoryLabels[cat] || cat}
             </button>
           ))}
         </div>
 
-        <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((img, i) => (
-            <motion.div
-              key={img.title + i}
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="relative group rounded-xl overflow-hidden cursor-pointer aspect-[4/3]"
-              onClick={() => setLightbox(img.src)}
-            >
-              <img
-                src={img.src}
-                alt={img.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-primary-dark/0 group-hover:bg-primary-dark/60 transition-colors duration-300 flex items-end">
-                <div className="p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-primary-foreground font-semibold">{img.title}</p>
-                  <p className="text-primary-foreground/70 text-sm">{img.category}</p>
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((img, i) => (
+              <motion.div
+                key={img.title + i}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative group rounded-xl overflow-hidden cursor-pointer aspect-[4/3]"
+                onClick={() => setLightbox(img.src)}
+              >
+                <img
+                  src={img.src}
+                  alt={img.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                />
+                <div className="absolute inset-0 bg-primary-dark/0 group-hover:bg-primary-dark/60 transition-colors duration-300 flex items-end">
+                  <div className="p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <p className="text-primary-foreground font-semibold">{img.title}</p>
+                    <p className="text-primary-foreground/70 text-sm">{categoryLabels[img.category] || img.category}</p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+                 </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
 
       {/* Lightbox */}
