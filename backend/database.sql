@@ -61,6 +61,27 @@ CREATE TABLE contact_messages (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabel Notifications
+CREATE TABLE notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  message VARCHAR(500) NOT NULL,
+  type ENUM('booking_new', 'booking_cancelled', 'general') DEFAULT 'general',
+  is_read BOOLEAN DEFAULT FALSE,
+  related_id INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel User Notifications (notifikasi untuk user biasa)
+CREATE TABLE user_notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  message TEXT NOT NULL,
+  type VARCHAR(50) DEFAULT 'general',
+  is_read BOOLEAN DEFAULT FALSE,
+  related_id INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 -- =============================================
 -- DATA AWAL (SEED)
 -- =============================================

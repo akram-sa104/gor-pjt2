@@ -4,6 +4,8 @@ import { Menu, X, User, LogOut, LayoutDashboard, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationBell from "@/components/NotificationBell"; 
+import UserNotificationBell from "@/components/UserNotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +98,8 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
+            {user && <NotificationBell />}
+            {user && <UserNotificationBell />}
             {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

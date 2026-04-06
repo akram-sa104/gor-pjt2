@@ -54,9 +54,21 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(409).json({ message: 'Jadwal bentrok dengan booking lain' });
     }
 
+       // Get user name for notification
+    const [userInfo] = await pool.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+    const [courtInfo] = await pool.query('SELECT name FROM courts WHERE id = ?', [court_id]);
+
     const [result] = await pool.query(
       'INSERT INTO bookings (user_id, court_id, booking_date, start_time, end_time, notes) VALUES (?, ?, ?, ?, ?, ?)',
       [req.user.id, court_id, booking_date, start_time, end_time, notes || null]
+    );
+
+        // Create notification for admin
+    const userName = userInfo[0]?.name || 'User';
+    const courtName = courtInfo[0]?.name || 'Lapangan';
+    await pool.query(
+      'INSERT INTO notifications (message, type, related_id) VALUES (?, ?, ?)',
+      [`Booking baru dari ${userName} untuk ${courtName} pada ${booking_date} jam ${start_time}`, 'booking_new', result.insertId]
     );
 
     res.status(201).json({ message: 'Booking berhasil diajukan', bookingId: result.insertId });
@@ -94,6 +106,12 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
     }
 
     await pool.query('UPDATE bookings SET status = "cancelled" WHERE id = ?', [req.params.id]);
+      // Notification for cancellation
+    const [userInfo] = await pool.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+    await pool.query(
+      'INSERT INTO notifications (message, type, related_id) VALUES (?, ?, ?)',
+      [`${userInfo[0]?.name || 'User'} membatalkan booking #${req.params.id}`, 'booking_cancelled', parseInt(req.params.id)]
+    );
     res.json({ message: 'Booking dibatalkan' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -124,11 +142,25 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Status harus approved atau rejected' });
     }
 
-    const [result] = await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, req.params.id]);
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Booking tidak ditemukan' });
+     const [booking] = await pool.query(
+      'SELECT b.*, c.name as court_name FROM bookings b JOIN courts c ON b.court_id = c.id WHERE b.id = ?',
+      [req.params.id]
+    );
+    if (booking.length === 0) return res.status(404).json({ message: 'Booking tidak ditemukan' });
+    await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, req.params.id]);
+    // Create user notification
+    const statusText = status === 'approved' ? 'disetujui' : 'ditolak';
+    const courtName = booking[0].court_name;
+    const bookingDate = booking[0].booking_date;
+    const dateStr = typeof bookingDate === 'string' ? bookingDate.slice(0, 10) : new Date(bookingDate).toISOString().slice(0, 10);
+    await pool.query(
+      'INSERT INTO user_notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
+      [booking[0].user_id, `Booking Anda untuk ${courtName} pada ${dateStr} telah ${statusText}`, `booking_${status}`, parseInt(req.params.id)]
+    );
 
     res.json({ message: `Booking ${status}` });
   } catch (error) {
+    console.error('Update status error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

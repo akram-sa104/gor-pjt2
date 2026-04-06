@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Court } from "@/lib/api";
+import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 
 const iconMap: Record<string, any> = { futsal: Goal, badminton: Volleyball };
 
@@ -27,8 +28,8 @@ const Booking = () => {
   const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-
-    const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingCourts, setLoadingCourts] = useState(true);
   // Load courts
@@ -202,6 +203,9 @@ const Booking = () => {
                     <div><span className="text-muted-foreground">Harga:</span><p className="font-medium text-accent">Rp {court.price_per_hour.toLocaleString("id-ID")}/jam</p></div>
                     <div><span className="text-muted-foreground">Tanggal:</span><p className="font-medium text-foreground">{selectedDate}</p></div>
                     <div><span className="text-muted-foreground">Jam:</span><p className="font-medium text-foreground">{selectedTime}</p></div>
+                  </div>
+                    <div className="mb-4">
+                    <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
                   </div>
                    <Button onClick={handleBooking} disabled={loading} className="w-full gradient-primary text-primary-foreground hover:opacity-90 h-11">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

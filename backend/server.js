@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const bookingRoutes = require('./routes/bookings');
 const contactRoutes = require('./routes/contact');
 const galleryRoutes = require('./routes/gallery');
+const notificationRoutes = require('./routes/notifications');
+const userNotificationRoutes = require('./routes/user-notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,7 +22,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/gallery', galleryRoutes);
-
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/user-notifications', userNotificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

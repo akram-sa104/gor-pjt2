@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save } from "lucide-react";
+import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import ChangePasswordForm from "@/components/ChangePasswordForm";
 import EditProfileForm from "@/components/EditProfileForm";
 import AdminUserList from "@/components/AdminUserList";
 import AdminGalleryManager from "@/components/AdminGalleryManager";
+import ExportBookingButtons from "@/components/ExportBookingButtons";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -143,6 +144,10 @@ const AdminDashboard = () => {
           <>
             <h1 className="text-2xl font-bold text-foreground mb-6">Kelola Booking</h1>
             <div className="bg-card rounded-xl shadow-corporate overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <span className="text-sm text-muted-foreground">{bookings.length} booking</span>
+                <ExportBookingButtons bookings={bookings} />
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

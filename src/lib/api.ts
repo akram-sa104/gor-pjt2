@@ -98,6 +98,20 @@ export const api = {
     }),
   deleteGallery: (id: number) =>
     request<{ message: string }>(`/gallery/${id}`, { method: 'DELETE' }),
+    // Notifications (Admin)
+  getNotifications: () => request<NotificationItem[]>('/notifications'),
+  getUnreadNotificationCount: () =>
+    request<{ count: number }>('/notifications/unread-count'),
+  markAllNotificationsRead: () =>
+    request<{ message: string }>('/notifications/read-all', { method: 'PATCH' }),
+  markNotificationRead: (id: number) =>
+    request<{ message: string }>(`/notifications/${id}/read`, { method: 'PATCH' }),
+   // User Notifications
+  getUserNotifications: () => request<NotificationItem[]>('/user-notifications'),
+  getUserUnreadNotificationCount: () =>
+    request<{ count: number }>('/user-notifications/unread-count'),
+  markAllUserNotificationsRead: () =>
+    request<{ message: string }>('/user-notifications/read-all', { method: 'PATCH' }),
 };
 // Types
 export interface User {
@@ -149,5 +163,14 @@ export interface GalleryItem {
   title: string;
   image_url: string;
   category: 'lapangan' | 'tribun' | 'exterior' | 'fasilitas';
+  created_at: string;
+}
+
+export interface NotificationItem {
+  id: number;
+  message: string;
+  type: 'booking_new' | 'booking_cancelled' | 'general';
+  is_read: boolean;
+  related_id?: number;
   created_at: string;
 }
