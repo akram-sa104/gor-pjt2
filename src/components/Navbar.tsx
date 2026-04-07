@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationBell from "@/components/NotificationBell"; 
 import UserNotificationBell from "@/components/UserNotificationBell";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +99,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle className={`${textColor} hover:bg-primary/10`} />
             {user && <NotificationBell />}
             {user && <UserNotificationBell />}
             {user ? (
@@ -167,6 +169,7 @@ const Navbar = () => {
               ))}
                {user ? (
                 <div className="flex flex-col gap-2 mt-3">
+                   <ThemeToggle className="w-full justify-start" />
                   <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" className="w-full gap-2"><LayoutDashboard size={16} /> Dashboard</Button>
                   </Link>
@@ -175,13 +178,16 @@ const Navbar = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="flex gap-2 mt-3">
-                  <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full">Login</Button>
-                  </Link>
-                  <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button className="w-full gradient-primary text-primary-foreground">Register</Button>
-                  </Link>
+                  <div className="flex flex-col gap-2 mt-3">
+                  <ThemeToggle className="w-full justify-start" />
+                  <div className="flex gap-2">
+                    <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" className="w-full">Login</Button>
+                    </Link>
+                    <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
+                      <Button className="w-full gradient-primary text-primary-foreground">Register</Button>
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

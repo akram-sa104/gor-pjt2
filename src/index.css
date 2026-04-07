@@ -122,4 +122,11 @@
   .shadow-corporate-lg {
     box-shadow: 0 10px 40px -10px hsl(209 78% 28% / 0.2);
   }
+   .water-wave {
+    animation: waterWave 6s ease-in-out infinite;
+  }
+}
+@keyframes waterWave {
+  0%, 100% { transform: translateX(0) scaleY(1); }
+  50% { transform: translateX(-2%) scaleY(1.1); }
 }

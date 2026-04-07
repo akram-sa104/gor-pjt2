@@ -8,6 +8,8 @@ import { api, GalleryItem } from "@/lib/api";
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const categories = [
+  { value: "hero", label: "Hero Background" },
+  { value: "about", label: "Tentang GOR" },
   { value: "lapangan", label: "Lapangan" },
   { value: "tribun", label: "Tribun" },
   { value: "exterior", label: "Exterior" },
@@ -22,6 +24,7 @@ const AdminGalleryManager = () => {
   const [form, setForm] = useState({ title: "", image_url: "", category: "lapangan" });
   const [saving, setSaving] = useState(false);
   const [uploadMode, setUploadMode] = useState<"upload" | "url">("upload");
+  const [filterCat, setFilterCat] = useState("all");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +60,7 @@ const AdminGalleryManager = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      // Build full URL for display
+      
       const baseUrl = API_BASE.replace('/api', '');
       setForm((f) => ({ ...f, image_url: `${baseUrl}${data.image_url}` }));
       toast.success("Gambar berhasil diupload");
@@ -117,6 +120,8 @@ const AdminGalleryManager = () => {
     return `${baseUrl}${url}`;
   };
 
+    const filteredItems = filterCat === "all" ? items : items.filter((i) => i.category === filterCat);
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -132,6 +137,32 @@ const AdminGalleryManager = () => {
         <Button onClick={() => { resetForm(); setShowForm(true); }} className="gap-1.5">
           <Plus className="h-4 w-4" /> Tambah Foto
         </Button>
+      </div>
+
+ {/* Category filter */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => setFilterCat("all")}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            filterCat === "all" ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Semua ({items.length})
+        </button>
+        {categories.map((c) => {
+          const count = items.filter((i) => i.category === c.value).length;
+          return (
+            <button
+              key={c.value}
+              onClick={() => setFilterCat(c.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                filterCat === c.value ? "gradient-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {c.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {showForm && (
@@ -153,58 +184,26 @@ const AdminGalleryManager = () => {
                 placeholder="Judul foto"
               />
             </div>
-             {/* Upload mode toggle */}
+             
             <div>
                             <label className="text-sm font-medium text-foreground mb-2 block">Gambar *</label>
               <div className="flex gap-2 mb-3">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={uploadMode === "upload" ? "default" : "outline"}
-                  onClick={() => setUploadMode("upload")}
-                  className="gap-1.5"
-                >
+                <Button type="button" size="sm" variant={uploadMode === "upload" ? "default" : "outline"} onClick={() => setUploadMode("upload")} className="gap-1.5">
                   <Upload className="h-3.5 w-3.5" /> Upload File
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={uploadMode === "url" ? "default" : "outline"}
-                  onClick={() => setUploadMode("url")}
-                  className="gap-1.5"
-                >
+                <Button type="button" size="sm" variant={uploadMode === "url" ? "default" : "outline"} onClick={() => setUploadMode("url")} className="gap-1.5">
                   <Link className="h-3.5 w-3.5" /> Input URL
                 </Button>
               </div>
               {uploadMode === "upload" ? (
                 <div>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/gif,image/webp"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploading}
-                    className="w-full gap-2 h-20 border-dashed border-2"
-                  >
-                    {uploading ? (
-                      <><Loader2 className="h-5 w-5 animate-spin" /> Mengupload...</>
-                    ) : (
-                      <><Upload className="h-5 w-5" /> Klik untuk pilih gambar (maks 5MB)</>
-                    )}
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleFileUpload} className="hidden" />
+                  <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading} className="w-full gap-2 h-20 border-dashed border-2">
+                    {uploading ? <><Loader2 className="h-5 w-5 animate-spin" /> Mengupload...</> : <><Upload className="h-5 w-5" /> Klik untuk pilih gambar (maks 5MB)</>}
                   </Button>
                 </div>
               ) : (
-                <Input
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
+                 <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/image.jpg" />
                 )}
             </div>
             <div>
@@ -218,15 +217,15 @@ const AdminGalleryManager = () => {
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
+                {(form.category === "hero" || form.category === "about") && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Gambar kategori "{form.category === "hero" ? "Hero Background" : "Tentang GOR"}" akan tampil sebagai slideshow otomatis di halaman utama.
+                </p>
+              )}
             </div>
             {form.image_url && (
               <div className="rounded-lg overflow-hidden border border-border max-w-xs">
-                <img
-                  src={form.image_url}
-                  alt="Preview"
-                  className="w-full h-40 object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
+               <img src={form.image_url} alt="Preview" className="w-full h-40 object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               </div>
             )}
             <Button type="submit" disabled={saving} className="gap-1.5">
@@ -237,22 +236,22 @@ const AdminGalleryManager = () => {
         </div>
       )}
 
-      {items.length === 0 ? (
+       {filteredItems.length === 0 ? (
         <div className="bg-card rounded-xl shadow-corporate p-8 text-center">
-          <p className="text-muted-foreground">Belum ada foto di galeri.</p>
+            <p className="text-muted-foreground">
+            {filterCat === "all" ? "Belum ada foto di galeri." : `Belum ada foto di kategori ini.`}
+          </p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
+         {filteredItems.map((item) => (
             <div key={item.id} className="bg-card rounded-xl shadow-corporate overflow-hidden group">
               <div className="aspect-[4/3] relative">
                 <img
                  src={getImageSrc(item.image_url)}
                   alt={item.title || "Gallery"}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
                 <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                   <Button size="sm" variant="secondary" onClick={() => handleEdit(item)} className="h-8 gap-1">
@@ -262,10 +261,16 @@ const AdminGalleryManager = () => {
                     <Trash2 className="h-3.5 w-3.5" /> Hapus
                   </Button>
                 </div>
+                  {/* Category badge */}
+                <div className="absolute top-2 left-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/80 text-primary-foreground">
+                    {categories.find((c) => c.value === item.category)?.label || item.category}
+                  </span>
+                </div>
               </div>
               <div className="p-3">
                 <p className="font-medium text-foreground text-sm truncate">{item.title || "Tanpa judul"}</p>
-                <p className="text-xs text-muted-foreground capitalize">{item.category}</p>
+               <p className="text-xs text-muted-foreground capitalize">{categories.find((c) => c.value === item.category)?.label || item.category}</p>
               </div>
             </div>
           ))}

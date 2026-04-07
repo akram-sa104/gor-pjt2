@@ -1,17 +1,72 @@
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { api, GalleryItem } from "@/lib/api";
 import heroImg from "@/assets/hero-gor.jpg";
 
+const getImageSrc = (url: string) => {
+  if (url.startsWith("http")) return url;
+  const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
+  return `${baseUrl}${url}`;
+};
 const HeroSection = () => {
+  const [images, setImages] = useState<string[]>([heroImg]);
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    api.getGallery()
+      .then((items: GalleryItem[]) => {
+        const heroItems = items.filter((i) => i.category === "hero");
+        if (heroItems.length > 0) {
+          setImages(heroItems.map((i) => getImageSrc(i.image_url)));
+        }
+      })
+      .catch(() => {});
+  }, []);
+  const next = useCallback(() => {
+    setCurrent((c) => (c + 1) % images.length);
+  }, [images.length]);
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const timer = setInterval(next, 5000);
+    return () => clearInterval(timer);
+  }, [images.length, next]);
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroImg})` }}
-      />
+          <AnimatePresence mode="popLayout">
+        <motion.div
+          key={current}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${images[current]})` }}
+          initial={{ opacity: 0, scale: 1.1, filter: "blur(4px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, scale: 0.98, filter: "blur(6px)" }}
+          transition={{
+            duration: 1.5,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
+        />
+      </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-br from-primary-dark/90 via-primary/80 to-accent/40" />
+        {/* Water wave overlay */}
+      <div className="absolute bottom-0 left-0 right-0 overflow-hidden">
+        <svg className="w-full h-24 text-background" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <motion.path
+            d="M0,40 C360,100 720,0 1080,60 C1260,90 1380,50 1440,70 L1440,120 L0,120 Z"
+            fill="currentColor"
+            animate={{
+              d: [
+                "M0,40 C360,100 720,0 1080,60 C1260,90 1380,50 1440,70 L1440,120 L0,120 Z",
+                "M0,60 C360,20 720,80 1080,30 C1260,10 1380,70 1440,50 L1440,120 L0,120 Z",
+                "M0,40 C360,100 720,0 1080,60 C1260,90 1380,50 1440,70 L1440,120 L0,120 Z",
+              ],
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </svg>
+      </div>
 
       <div className="relative container mx-auto px-4 text-center">
         <motion.div
@@ -44,7 +99,20 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+       {/* Slide indicators */}
+      {images.length > 1 && (
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                i === current ? "bg-accent w-6" : "bg-primary-foreground/40"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 };

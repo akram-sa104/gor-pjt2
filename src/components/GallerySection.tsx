@@ -22,6 +22,8 @@ const categoryLabels: Record<string, string> = {
   tribun: "Tribun",
   exterior: "Exterior",
   fasilitas: "Fasilitas",
+   hero: "Hero",
+  about: "Tentang",
 };
 const getImageSrc = (url: string) => {
   if (url.startsWith("http")) return url;

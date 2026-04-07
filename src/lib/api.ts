@@ -162,7 +162,7 @@ export interface GalleryItem {
   id: number;
   title: string;
   image_url: string;
-  category: 'lapangan' | 'tribun' | 'exterior' | 'fasilitas';
+  category: string;
   created_at: string;
 }
 

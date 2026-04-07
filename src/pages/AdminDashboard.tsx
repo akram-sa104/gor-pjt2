@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save, FileSpreadsheet } from "lucide-react";
+import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save, FileSpreadsheet, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -39,6 +39,9 @@ const AdminDashboard = () => {
   const [bookings, setBookings] = useState<AdminBookingItem[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("");
   useEffect(() => {
     if (!user || user.role !== "admin") {
       navigate("/login");
@@ -139,14 +142,62 @@ const AdminDashboard = () => {
             </div>
           </>
         );
-      case "booking":
+       case "booking": {
+        const filtered = bookings.filter((b) => {
+          const matchSearch = !searchQuery || b.user_name.toLowerCase().includes(searchQuery.toLowerCase()) || b.court_name.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchStatus = statusFilter === "all" || b.status === statusFilter;
+          const matchDate = !dateFilter || b.booking_date.slice(0, 10) === dateFilter;
+          return matchSearch && matchStatus && matchDate;
+        });
         return (
           <>
             <h1 className="text-2xl font-bold text-foreground mb-6">Kelola Booking</h1>
+               {/* Filters */}
+            <div className="bg-card rounded-xl shadow-corporate p-4 mb-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" /> Filter & Pencarian
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari nama user atau lapangan..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="cancelled">Dibatalkan</option>
+                </select>
+                <Input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              {(searchQuery || statusFilter !== "all" || dateFilter) && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{filtered.length} dari {bookings.length} booking</span>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setDateFilter(""); }}>
+                    Reset Filter
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="bg-card rounded-xl shadow-corporate overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <span className="text-sm text-muted-foreground">{bookings.length} booking</span>
-                <ExportBookingButtons bookings={bookings} />
+                 <span className="text-sm text-muted-foreground">{filtered.length} booking</span>
+                <ExportBookingButtons bookings={filtered} />
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -161,7 +212,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.map((b) => (
+                    {filtered.map((b) => (
                       <tr key={b.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                         <td className="py-3 px-4 text-foreground font-medium">{b.user_name}</td>
                         <td className="py-3 px-4 text-foreground">{b.court_name}</td>
@@ -186,8 +237,10 @@ const AdminDashboard = () => {
                         </td>
                       </tr>
                     ))}
-                    {bookings.length === 0 && (
-                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Belum ada booking</td></tr>
+                     {filtered.length === 0 && (
+                      <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">
+                        {bookings.length === 0 ? "Belum ada booking" : "Tidak ada booking yang cocok dengan filter"}
+                      </td></tr>
                     )}
                   </tbody>
                 </table>
@@ -195,6 +248,7 @@ const AdminDashboard = () => {
             </div>
           </>
         );
+      }
       case "galeri":
          return <AdminGalleryManager />;
       case "users":
