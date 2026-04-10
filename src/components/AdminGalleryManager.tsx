@@ -86,8 +86,9 @@ const AdminGalleryManager = () => {
       const baseUrl = API_BASE.replace('/api', '');
       setForm((f) => ({ ...f, image_url: `${baseUrl}${data.image_url}` }));
       toast.success("Gambar berhasil diupload");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal upload gambar");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Gagal upload gambar";
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -111,8 +112,9 @@ const AdminGalleryManager = () => {
         toast.success("Foto berhasil ditambahkan");
       }
       resetForm();
-    } catch (err: any) {
-      toast.error(err.message || "Gagal menyimpan");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Gagal menyimpan";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -131,8 +133,9 @@ const AdminGalleryManager = () => {
       await api.deleteGallery(id);
       setItems(items.filter((i) => i.id !== id));
       toast.success("Foto berhasil dihapus");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal menghapus");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Gagal menghapus";
+      toast.error(errorMessage);
     }
   };
 
@@ -219,7 +222,7 @@ const AdminGalleryManager = () => {
               </div>
               {uploadMode === "upload" ? (
                 <div>
-                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleFileUpload} className="hidden" />
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleFileUpload} className="hidden" title="Pilih gambar untuk upload" />
                   <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading} className="w-full gap-2 h-20 border-dashed border-2">
                     {uploading ? <><Loader2 className="h-5 w-5 animate-spin" /> Mengupload...</> : <><Upload className="h-5 w-5" /> Klik untuk pilih gambar (maks 5MB)</>}
                   </Button>
@@ -234,6 +237,7 @@ const AdminGalleryManager = () => {
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                aria-label="Pilih kategori foto"
               >
                 {categories.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -268,7 +272,7 @@ const AdminGalleryManager = () => {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
          {filteredItems.map((item) => (
              <div key={item.id} className="bg-card rounded-xl shadow-corporate overflow-hidden group relative">
-              {(item as any).isDefault && (
+              {("isDefault" in item && item.isDefault) && (
                 <div className="absolute top-2 right-2 z-10">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/90 text-white flex items-center gap-1">
                     <Info className="h-3 w-3" /> Bawaan
@@ -283,7 +287,7 @@ const AdminGalleryManager = () => {
                   onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
                 <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                   {!(item as any).isDefault && (
+                   {!("isDefault" in item && item.isDefault) && (
                     <>
                       <Button size="sm" variant="secondary" onClick={() => handleEdit(item)} className="h-8 gap-1">
                         <Edit2 className="h-3.5 w-3.5" /> Edit
