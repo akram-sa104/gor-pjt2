@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save, FileSpreadsheet, Search, Filter } from "lucide-react";
+import { BarChart3, Users, CalendarDays, CheckCircle, XCircle, Clock, LogOut, Image, Settings, LayoutDashboard, Loader2, Save, FileSpreadsheet, Search, Filter, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import EditProfileForm from "@/components/EditProfileForm";
 import AdminUserList from "@/components/AdminUserList";
 import AdminGalleryManager from "@/components/AdminGalleryManager";
 import ExportBookingButtons from "@/components/ExportBookingButtons";
+import AdminMessageCenter from "@/components/AdminMessageCenter";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -22,12 +23,13 @@ const statusConfig = {
   cancelled: { label: "Dibatalkan", className: "bg-muted text-muted-foreground" },
 };
 
-type TabKey = "dashboard" | "booking" | "galeri" | "users" | "statistik" | "pengaturan";
+type TabKey = "dashboard" | "booking" | "galeri" | "users" | "pesan" | "statistik" | "pengaturan";
 const sidebarItems: { icon: any; label: string; key: TabKey }[] = [
   { icon: LayoutDashboard, label: "Dashboard", key: "dashboard" },
   { icon: CalendarDays, label: "Kelola Booking", key: "booking" },
   { icon: Image, label: "Kelola Galeri", key: "galeri" },
   { icon: Users, label: "Data User", key: "users" },
+  { icon: MessageSquare, label: "Pusat Pesan", key: "pesan" },
   { icon: BarChart3, label: "Statistik", key: "statistik" },
   { icon: Settings, label: "Pengaturan", key: "pengaturan" },
 ];
@@ -253,6 +255,8 @@ const AdminDashboard = () => {
          return <AdminGalleryManager />;
       case "users":
          return <AdminUserList />;
+      case "pesan":
+        return <AdminMessageCenter />;
       case "statistik":
         return (
           <>

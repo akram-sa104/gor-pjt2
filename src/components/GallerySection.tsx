@@ -52,12 +52,12 @@ const GallerySection = () => {
           setCategories(uniqueCats);
         } else {
           setGalleryItems(fallbackImages);
-          setCategories(["Semua", "lapangan", "tribun", "exterior"]);
+          setCategories(["Semua", "lapangan", "tribun", "exterior", "fasilitas"]);
         }
       })
       .catch(() => {
         setGalleryItems(fallbackImages);
-        setCategories(["Semua", "lapangan", "tribun", "exterior"]);
+        setCategories(["Semua", "lapangan", "tribun", "exterior", "fasilitas"]);
       })
       .finally(() => setLoading(false));
   }, []);

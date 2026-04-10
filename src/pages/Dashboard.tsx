@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2, Settings } from "lucide-react";
+import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2, Settings, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api, BookingItem } from "@/lib/api";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import EditProfileForm from "@/components/EditProfileForm";
+import ReviewForm from "@/components/ReviewForm";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -26,6 +27,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("riwayat");
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewingId, setReviewingId] = useState<number | null>(null);
+  const [reviewedIds, setReviewedIds] = useState<Set<number>>(new Set());
 
  useEffect(() => {
     if (!user) {
@@ -33,7 +36,13 @@ const Dashboard = () => {
       return;
     }
     api.getMyBookings()
-      .then(setBookings)
+        .then((b) => {
+        setBookings(b);
+        // Check which approved bookings are already reviewed
+        const approved = b.filter((x) => x.status === "approved");
+        Promise.all(approved.map((x) => api.checkReview(x.id).then((r) => r.reviewed ? x.id : null)))
+          .then((ids) => setReviewedIds(new Set(ids.filter(Boolean) as number[])));
+      })
       .catch(() => toast.error("Gagal memuat data booking"))
       .finally(() => setLoading(false));
   }, [user, navigate]);
@@ -106,23 +115,47 @@ const Dashboard = () => {
                 </thead>
                 <tbody>
                   {bookings.map((b) => (
-                    <tr key={b.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                      <td className="py-3 px-4 text-foreground font-medium">{b.court_name}</td>
-                      <td className="py-3 px-4 text-foreground flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{b.booking_date.slice(0, 10)}</td>
-                      <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
-                          {statusConfig[b.status]?.label || b.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {b.status === "pending" && (
-                          <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
-                            <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
+                    <React.Fragment key={b.id}>
+                      <tr className="border-b border-border hover:bg-secondary/50 transition-colors">
+                        <td className="py-3 px-4 text-foreground font-medium">{b.court_name}</td>
+                        <td className="py-3 px-4 text-foreground flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{b.booking_date.slice(0, 10)}</td>
+                        <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
+                            {statusConfig[b.status]?.label || b.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {b.status === "pending" && (
+                            <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
+                            </Button>
+                          )}
+                          {b.status === "approved" && !reviewedIds.has(b.id) && (
+                            <Button variant="ghost" size="sm" onClick={() => setReviewingId(reviewingId === b.id ? null : b.id)} className="text-warning hover:text-warning hover:bg-warning/10 h-8">
+                              <Star className="h-3.5 w-3.5 mr-1" /> Review
+                            </Button>
+                          )}
+                          {b.status === "approved" && reviewedIds.has(b.id) && (
+                            <span className="text-xs text-muted-foreground">✓ Reviewed</span>
+                          )}
+                        </td>
+                      </tr>
+                      {reviewingId === b.id && (
+                        <tr>
+                          <td colSpan={5} className="px-4 pb-4">
+                            <ReviewForm
+                              bookingId={b.id}
+                              courtName={b.court_name}
+                              onReviewSent={() => {
+                                setReviewingId(null);
+                                setReviewedIds((prev) => new Set([...prev, b.id]));
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

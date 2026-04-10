@@ -1,11 +1,25 @@
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Plus, Trash2, Edit2, X, Save, Upload, Link } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit2, X, Save, Upload, Link, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { api, GalleryItem } from "@/lib/api";
+import futsalImg from "@/assets/futsal-court.jpg";
+import badmintonImg from "@/assets/badminton-court.jpg";
+import tribuneImg from "@/assets/tribune.jpg";
+import exteriorImg from "@/assets/exterior-gor.jpg";
+import heroImg from "@/assets/hero-gor.jpg";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const defaultGalleryItems: (GalleryItem & { isDefault?: boolean })[] = [
+  { id: -1, title: "Hero Background GOR", image_url: heroImg, category: "hero", created_at: "", isDefault: true },
+  { id: -2, title: "Eksterior GOR", image_url: exteriorImg, category: "about", created_at: "", isDefault: true },
+  { id: -3, title: "Lapangan Futsal", image_url: futsalImg, category: "lapangan", created_at: "", isDefault: true },
+  { id: -4, title: "Lapangan Badminton", image_url: badmintonImg, category: "lapangan", created_at: "", isDefault: true },
+  { id: -5, title: "Tribun Penonton", image_url: tribuneImg, category: "tribun", created_at: "", isDefault: true },
+  { id: -6, title: "Eksterior GOR", image_url: exteriorImg, category: "exterior", created_at: "", isDefault: true },
+];
 
 const categories = [
   { value: "hero", label: "Hero Background" },
@@ -17,7 +31,7 @@ const categories = [
 ];
 
 const AdminGalleryManager = () => {
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<(GalleryItem & { isDefault?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -30,8 +44,16 @@ const AdminGalleryManager = () => {
 
   useEffect(() => {
     api.getGallery()
-      .then(setItems)
-      .catch(() => toast.error("Gagal memuat galeri"))
+       .then((data) => {
+        if (data.length > 0) {
+          setItems(data);
+        } else {
+          setItems(defaultGalleryItems);
+        }
+      })
+      .catch(() => {
+        setItems(defaultGalleryItems);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -245,7 +267,14 @@ const AdminGalleryManager = () => {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
          {filteredItems.map((item) => (
-            <div key={item.id} className="bg-card rounded-xl shadow-corporate overflow-hidden group">
+             <div key={item.id} className="bg-card rounded-xl shadow-corporate overflow-hidden group relative">
+              {(item as any).isDefault && (
+                <div className="absolute top-2 right-2 z-10">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/90 text-white flex items-center gap-1">
+                    <Info className="h-3 w-3" /> Bawaan
+                  </span>
+                </div>
+              )}
               <div className="aspect-[4/3] relative">
                 <img
                  src={getImageSrc(item.image_url)}
@@ -254,12 +283,16 @@ const AdminGalleryManager = () => {
                   onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                 />
                 <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                  <Button size="sm" variant="secondary" onClick={() => handleEdit(item)} className="h-8 gap-1">
-                    <Edit2 className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)} className="h-8 gap-1">
-                    <Trash2 className="h-3.5 w-3.5" /> Hapus
-                  </Button>
+                   {!(item as any).isDefault && (
+                    <>
+                      <Button size="sm" variant="secondary" onClick={() => handleEdit(item)} className="h-8 gap-1">
+                        <Edit2 className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)} className="h-8 gap-1">
+                        <Trash2 className="h-3.5 w-3.5" /> Hapus
+                      </Button>
+                    </>
+                  )}
                 </div>
                   {/* Category badge */}
                 <div className="absolute top-2 left-2">

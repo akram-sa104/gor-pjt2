@@ -112,6 +112,28 @@ export const api = {
     request<{ count: number }>('/user-notifications/unread-count'),
   markAllUserNotificationsRead: () =>
     request<{ message: string }>('/user-notifications/read-all', { method: 'PATCH' }),
+   // Reviews
+  submitReview: (data: { booking_id: number; rating: number; comment?: string }) =>
+    request<{ message: string; id: number }>('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  checkReview: (bookingId: number) =>
+    request<{ reviewed: boolean }>(`/reviews/check/${bookingId}`),
+  // Messages (Admin)
+  getInbox: () => request<InboxMessage[]>('/messages/inbox'),
+  replyMessage: (data: { source: string; source_id: number; reply_message: string; user_id?: number }) =>
+    request<{ message: string }>('/messages/reply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getReplies: (source: string, sourceId: number) =>
+    request<MessageReply[]>(`/messages/replies/${source}/${sourceId}`),
+  userReply: (data: { source: string; source_id: number; reply_message: string }) =>
+    request<{ message: string }>('/messages/user-reply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 // Types
 export interface User {
@@ -172,5 +194,27 @@ export interface NotificationItem {
   type: 'booking_new' | 'booking_cancelled' | 'general';
   is_read: boolean;
   related_id?: number;
+  created_at: string;
+}
+
+export interface InboxMessage {
+  id: number;
+  name: string;
+  email: string;
+  subject?: string;
+  message?: string;
+  is_read: boolean;
+  created_at: string;
+  source: 'contact' | 'review';
+  rating?: number;
+  user_id?: number;
+}
+export interface MessageReply {
+  id: number;
+  source: string;
+  source_id: number;
+  admin_id: number;
+  admin_name: string;
+  message: string;
   created_at: string;
 }

@@ -46,7 +46,7 @@ CREATE TABLE gallery (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200),
   image_url VARCHAR(500) NOT NULL,
-  category ENUM('lapangan', 'tribun', 'exterior', 'fasilitas') DEFAULT 'lapangan',
+  category ENUM('hero', 'about', 'lapangan', 'tribun', 'exterior', 'fasilitas') DEFAULT 'lapangan',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
