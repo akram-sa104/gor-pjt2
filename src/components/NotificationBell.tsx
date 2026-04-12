@@ -38,7 +38,9 @@ const NotificationBell = () => {
       if (data.count > 0 && Notification.permission === "granted") {
         // Only notify if count increased (simple check)
       }
-    } catch {}
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err);
+    }
   };
 
   const handleOpen = async () => {
@@ -47,7 +49,9 @@ const NotificationBell = () => {
       try {
         const data = await api.getNotifications();
         setNotifications(data);
-      } catch {}
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
     }
   };
 
@@ -56,7 +60,9 @@ const NotificationBell = () => {
       await api.markAllNotificationsRead();
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    } catch {}
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
   };
 
   const requestPushPermission = () => {
@@ -84,11 +90,13 @@ const NotificationBell = () => {
         }
         lastCount = data.count;
         setUnreadCount(data.count);
-      } catch {}
+      } catch (err) {
+        console.error("Failed to check new notifications:", err);
+      }
     };
     const interval = setInterval(checkNew, 30000);
     return () => clearInterval(interval);
-  }, [isAdmin]);
+  }, [isAdmin, unreadCount]);
 
   if (!isAdmin) return null;
 

@@ -31,8 +31,9 @@ const ResetPassword = () => {
       await api.resetPassword(email, code, newPassword);
       toast.success("Password berhasil direset! Silakan login.");
       navigate("/login");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mereset password");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal mereset password";
+      toast.error(message || "Gagal mereset password");
     } finally {
       setLoading(false);
     }

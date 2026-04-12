@@ -35,7 +35,9 @@ const UserNotificationBell = () => {
       if (data.count > 0 && "Notification" in window && Notification.permission === "granted") {
         // Browser push handled separately
       }
-    } catch {}
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err);
+    }
   };
 
   const handleOpen = async () => {
@@ -44,7 +46,9 @@ const UserNotificationBell = () => {
       try {
         const data = await api.getUserNotifications();
         setNotifications(data);
-      } catch {}
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
     }
   };
 
@@ -53,7 +57,9 @@ const UserNotificationBell = () => {
       await api.markAllUserNotificationsRead();
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    } catch {}
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
   };
 
   useEffect(() => {
@@ -78,11 +84,13 @@ const UserNotificationBell = () => {
         }
         lastCount = data.count;
         setUnreadCount(data.count);
-      } catch {}
+      } catch (err) {
+        console.error("Failed to check new notifications:", err);
+      }
     };
     const interval = setInterval(checkNew, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, unreadCount]);
 
   if (!user || user.role === "admin") return null;
 

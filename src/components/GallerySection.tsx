@@ -137,7 +137,7 @@ const GallerySection = () => {
             className="fixed inset-0 z-50 bg-foreground/90 flex items-center justify-center p-4"
             onClick={() => setLightbox(null)}
           >
-            <button className="absolute top-6 right-6 text-primary-foreground hover:text-accent transition-colors" onClick={() => setLightbox(null)}>
+            <button className="absolute top-6 right-6 text-primary-foreground hover:text-accent transition-colors" onClick={() => setLightbox(null)} title="Tutup">
               <X size={32} />
             </button>
             <motion.img

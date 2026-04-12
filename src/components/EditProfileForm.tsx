@@ -21,8 +21,9 @@ const EditProfileForm = () => {
       const updated = await api.updateProfile({ name: name.trim(), phone: phone.trim() });
       updateUser(updated);
       toast.success("Profil berhasil diperbarui");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal memperbarui profil");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal memperbarui profil";
+      toast.error(message || "Gagal memperbarui profil");
     } finally {
       setLoading(false);
     }

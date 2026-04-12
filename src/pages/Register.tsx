@@ -31,8 +31,9 @@ const Register = () => {
       await register({ name: form.name, email: form.email, phone: form.phone, password: form.password });
       toast.success("Registrasi berhasil! Silakan login.");
       navigate("/login");
-    } catch (err: any) {
-      toast.error(err.message || "Registrasi gagal");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registrasi gagal";
+      toast.error(message || "Registrasi gagal");
     } finally {
       setLoading(false);
     }

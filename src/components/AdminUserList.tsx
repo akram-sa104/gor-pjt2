@@ -23,8 +23,9 @@ const AdminUserList = () => {
       await api.deleteUser(id);
       setUsers(users.filter((u) => u.id !== id));
       toast.success("User berhasil dihapus");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal menghapus user");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal menghapus user";
+      toast.error(message || "Gagal menghapus user");
     }
   };
 

@@ -84,6 +84,7 @@ const AboutSection = () => {
                 {images.map((_, i) => (
                   <button
                     key={i}
+                    title={`Tampilkan gambar ${i + 1}`}
                     onClick={() => setCurrent(i)}
                     className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
                       i === current ? "bg-accent w-4" : "bg-primary-foreground/50"

@@ -28,8 +28,9 @@ const ChangePasswordForm = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengubah password");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal mengubah password";
+      toast.error(message || "Gagal mengubah password");
     } finally {
       setLoading(false);
     }

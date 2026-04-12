@@ -94,8 +94,7 @@ const WaterCursorEffect = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ mixBlendMode: "screen" }}
+      className="fixed inset-0 pointer-events-none z-[9999] mix-blend-screen"
     />
   );
 };

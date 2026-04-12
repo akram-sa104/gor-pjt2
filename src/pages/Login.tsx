@@ -25,8 +25,9 @@ const Login = () => {
        const res = await login(email, password);
       toast.success("Login berhasil!");
        navigate(res?.role === "admin" ? "/admin" : "/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Login gagal");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login gagal";
+      toast.error(message || "Login gagal");
     } finally {
       setLoading(false);
     }

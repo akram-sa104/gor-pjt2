@@ -18,8 +18,9 @@ const ForgotPassword = () => {
     try {
       await api.forgotPassword(email);
       setSent(true);
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengirim email reset");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal mengirim email reset";
+      toast.error(message || "Gagal mengirim email reset");
     } finally {
       setLoading(false);
     }

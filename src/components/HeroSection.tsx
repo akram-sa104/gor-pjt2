@@ -105,6 +105,7 @@ const HeroSection = () => {
           {images.map((_, i) => (
             <button
               key={i}
+              title={`Tampilkan slide ${i + 1}`}
               onClick={() => setCurrent(i)}
               className={`w-2 h-2 rounded-full transition-all duration-500 ${
                 i === current ? "bg-accent w-6" : "bg-primary-foreground/40"

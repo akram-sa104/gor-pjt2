@@ -28,8 +28,9 @@ const ReviewForm = ({ bookingId, courtName, onReviewSent }: ReviewFormProps) => 
       await api.submitReview({ booking_id: bookingId, rating, comment });
       toast.success("Review berhasil dikirim!");
       onReviewSent();
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengirim review");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal mengirim review";
+      toast.error(message || "Gagal mengirim review");
     } finally {
       setLoading(false);
     }
@@ -47,6 +48,7 @@ const ReviewForm = ({ bookingId, courtName, onReviewSent }: ReviewFormProps) => 
           <button
             key={star}
             type="button"
+            title={`Berikan ${star} bintang`}
             onMouseEnter={() => setHoveredStar(star)}
             onMouseLeave={() => setHoveredStar(0)}
             onClick={() => setRating(star)}

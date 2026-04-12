@@ -17,8 +17,9 @@ const ContactSection = () => {
       await api.sendContact(form);
       toast.success("Pesan berhasil dikirim! Kami akan segera menghubungi Anda.");
       setForm({ name: "", email: "", message: "" });
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengirim pesan");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal mengirim pesan";
+      toast.error(message || "Gagal mengirim pesan");
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,7 @@ const ContactSection = () => {
             <div className="rounded-xl overflow-hidden shadow-corporate h-64">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.9!2d107.38!3d-6.55!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMzMnMDAuMCJTIDEwN8KwMjInNDguMCJF!5e0!3m2!1sen!2sid!4v1"
-                width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="Lokasi GOR"
+                width="100%" height="100%" className="border-none" allowFullScreen loading="lazy" title="Lokasi GOR"
               />
             </div>
           </motion.div>
