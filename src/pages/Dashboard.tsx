@@ -51,8 +51,9 @@ const Dashboard = () => {
       await api.cancelBooking(id);
       setBookings(bookings.filter((b) => b.id !== id));
       toast.success("Booking berhasil dibatalkan.");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal membatalkan booking");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal membatalkan booking";
+      toast.error(message || "Gagal membatalkan booking");
     }
   };
   const handleLogout = () => {
@@ -106,7 +107,8 @@ const Dashboard = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-secondary">
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lapangan</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lantai</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Olahraga</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tanggal</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Jam</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
@@ -117,9 +119,10 @@ const Dashboard = () => {
                   {bookings.map((b) => (
                     <React.Fragment key={b.id}>
                       <tr className="border-b border-border hover:bg-secondary/50 transition-colors">
-                        <td className="py-3 px-4 text-foreground font-medium">{b.court_name}</td>
+                        <td className="py-3 px-4 text-foreground font-medium">{b.floor_name}</td>
+                        <td className="py-3 px-4 text-foreground">{b.sport}</td>
                         <td className="py-3 px-4 text-foreground flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{b.booking_date.slice(0, 10)}</td>
-                        <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)}</td>
+                           <td className="py-3 px-4 text-foreground"><Clock className="h-3.5 w-3.5 inline mr-1.5 text-muted-foreground" />{b.start_time.slice(0, 5)} - {b.end_time.slice(0, 5)}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
                             {statusConfig[b.status]?.label || b.status}
@@ -146,7 +149,7 @@ const Dashboard = () => {
                           <td colSpan={5} className="px-4 pb-4">
                             <ReviewForm
                               bookingId={b.id}
-                              courtName={b.court_name}
+                               courtName={`${b.floor_name} - ${b.sport}`}
                               onReviewSent={() => {
                                 setReviewingId(null);
                                 setReviewedIds((prev) => new Set([...prev, b.id]));

@@ -24,7 +24,7 @@ const statusConfig = {
 };
 
 type TabKey = "dashboard" | "booking" | "galeri" | "users" | "pesan" | "statistik" | "pengaturan";
-const sidebarItems: { icon: any; label: string; key: TabKey }[] = [
+const sidebarItems: { icon: React.ElementType; label: string; key: TabKey }[] = [
   { icon: LayoutDashboard, label: "Dashboard", key: "dashboard" },
   { icon: CalendarDays, label: "Kelola Booking", key: "booking" },
   { icon: Image, label: "Kelola Galeri", key: "galeri" },
@@ -59,8 +59,9 @@ const AdminDashboard = () => {
       await api.updateBookingStatus(id, status);
       setBookings(bookings.map((b) => (b.id === id ? { ...b, status } : b)));
       toast.success(`Booking ${status === "approved" ? "disetujui" : "ditolak"}.`);
-    } catch (err: any) {
-      toast.error(err.message || "Gagal update status");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal update status";
+      toast.error(message || "Gagal update status");
     }
   };
 
@@ -122,15 +123,16 @@ const AdminDashboard = () => {
                   <thead>
                     <tr className="bg-secondary">
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lapangan</th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lantai</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Olahraga</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bookings.slice(0, 5).map((b) => (
                       <tr key={b.id} className="border-b border-border">
                         <td className="py-3 px-4 text-foreground">{b.user_name}</td>
-                        <td className="py-3 px-4 text-foreground">{b.court_name}</td>
+                          <td className="py-3 px-4 text-foreground">{b.floor_name}</td>
+                        <td className="py-3 px-4 text-foreground">{b.sport}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
                             {statusConfig[b.status]?.label || b.status}
@@ -146,7 +148,7 @@ const AdminDashboard = () => {
         );
        case "booking": {
         const filtered = bookings.filter((b) => {
-          const matchSearch = !searchQuery || b.user_name.toLowerCase().includes(searchQuery.toLowerCase()) || b.court_name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchSearch = !searchQuery || b.user_name.toLowerCase().includes(searchQuery.toLowerCase()) || b.floor_name.toLowerCase().includes(searchQuery.toLowerCase()) || b.sport.toLowerCase().includes(searchQuery.toLowerCase());
           const matchStatus = statusFilter === "all" || b.status === statusFilter;
           const matchDate = !dateFilter || b.booking_date.slice(0, 10) === dateFilter;
           return matchSearch && matchStatus && matchDate;
@@ -170,6 +172,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <select
+                  aria-label="Filter status booking"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
@@ -206,7 +209,8 @@ const AdminDashboard = () => {
                   <thead>
                     <tr className="bg-secondary">
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lapangan</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Lantai</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Olahraga</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tanggal</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Jam</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
@@ -217,9 +221,10 @@ const AdminDashboard = () => {
                     {filtered.map((b) => (
                       <tr key={b.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
                         <td className="py-3 px-4 text-foreground font-medium">{b.user_name}</td>
-                        <td className="py-3 px-4 text-foreground">{b.court_name}</td>
+                       <td className="py-3 px-4 text-foreground">{b.floor_name}</td>
+                        <td className="py-3 px-4 text-foreground">{b.sport}</td>
                         <td className="py-3 px-4 text-foreground">{b.booking_date.slice(0, 10)}</td>
-                        <td className="py-3 px-4 text-foreground">{b.start_time.slice(0, 5)}</td>
+                        <td className="py-3 px-4 text-foreground">{b.start_time.slice(0, 5)} - {b.end_time.slice(0, 5)}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[b.status]?.className || ""}`}>
                             {statusConfig[b.status]?.label || b.status}

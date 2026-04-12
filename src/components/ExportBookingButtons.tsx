@@ -18,15 +18,16 @@ const ExportBookingButtons = ({ bookings }: Props) => {
   const exportToExcel = async () => {
     try {
       const XLSX = await import("xlsx");
-      const data = bookings.map((b, i) => ({
+      const data: Record<string, string | number>[] = bookings.map((b, i) => ({
         No: i + 1,
         User: b.user_name,
         Email: b.user_email,
-        Lapangan: b.court_name,
-        Tipe: b.court_type,
+        Lantai: b.floor_name,
+        Olahraga: b.sport,
         Tanggal: b.booking_date.slice(0, 10),
         "Jam Mulai": b.start_time.slice(0, 5),
         "Jam Selesai": b.end_time.slice(0, 5),
+        "Durasi (Jam)": b.duration_hours,
         Status: statusLabels[b.status] || b.status,
         Catatan: b.notes || "-",
       }));
@@ -37,7 +38,7 @@ const ExportBookingButtons = ({ bookings }: Props) => {
 
       // Auto-width columns
       const colWidths = Object.keys(data[0] || {}).map((key) => ({
-        wch: Math.max(key.length, ...data.map((row) => String((row as any)[key] || "").length)) + 2,
+        wch: Math.max(key.length, ...data.map((row) => String(row[key] || "").length)) + 2,
       }));
       ws["!cols"] = colWidths;
 
@@ -63,12 +64,13 @@ const ExportBookingButtons = ({ bookings }: Props) => {
 
       autoTable(doc, {
         startY: 40,
-        head: [["No", "User", "Email", "Lapangan", "Tanggal", "Jam", "Status"]],
+        head: [["No", "User", "Email", "Lantai", "Olahraga", "Tanggal", "Jam", "Status"]],
         body: bookings.map((b, i) => [
           i + 1,
           b.user_name,
           b.user_email,
-          b.court_name,
+          b.floor_name,
+          b.sport,
           b.booking_date.slice(0, 10),
           `${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}`,
           statusLabels[b.status] || b.status,

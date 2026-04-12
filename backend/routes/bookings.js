@@ -3,28 +3,35 @@ const pool = require('../config/db');
 const { verifyToken, isAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// ==================== GET SEMUA LAPANGAN ====================
-router.get('/courts', async (req, res) => {
+// ==================== GET SEMUA LANTAI & OLAHRAGA ====================
+router.get('/floors', async (req, res) => {
   try {
-    const [courts] = await pool.query('SELECT * FROM courts WHERE is_active = TRUE');
-    res.json(courts);
+     const [floors] = await pool.query('SELECT * FROM floors WHERE is_active = TRUE');
+    const [sports] = await pool.query('SELECT * FROM floor_sports');
+    
+    const result = floors.map(f => ({
+      ...f,
+      sports: sports.filter(s => s.floor_id === f.id)
+    }));
+    
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ==================== CEK KETERSEDIAAN ====================
+// ==================== CEK KETERSEDIAAN PER LANTAI ====================
 router.get('/availability', async (req, res) => {
   try {
-    const { court_id, date } = req.query;
-    if (!court_id || !date) {
-      return res.status(400).json({ message: 'court_id dan date wajib diisi' });
+    const { floor_id, date } = req.query;
+    if (!floor_id || !date) {
+      return res.status(400).json({ message: 'floor_id dan date wajib diisi' });
     }
 
     const [bookings] = await pool.query(
-      `SELECT start_time, end_time, status FROM bookings 
-       WHERE court_id = ? AND booking_date = ? AND status IN ('pending', 'approved')`,
-      [court_id, date]
+      `SELECT start_time, end_time, sport, status FROM bookings 
+       WHERE floor_id = ? AND booking_date = ? AND status IN ('pending', 'approved')`,
+      [floor_id, date]
     );
 
     res.json(bookings);
@@ -36,39 +43,46 @@ router.get('/availability', async (req, res) => {
 // ==================== BUAT BOOKING (USER) ====================
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { court_id, booking_date, start_time, end_time, notes } = req.body;
+    const { floor_id, sport, booking_date, start_time, end_time, notes } = req.body;
 
-    if (!court_id || !booking_date || !start_time || !end_time) {
+    if (!floor_id || !sport || !booking_date || !start_time || !end_time) {
       return res.status(400).json({ message: 'Data booking tidak lengkap' });
     }
 
-    // Cek bentrok jadwal
+        // Calculate duration
+    const startHour = parseInt(start_time.split(':')[0]);
+    const endHour = parseInt(end_time.split(':')[0]);
+    const duration_hours = endHour - startHour;
+    if (duration_hours < 1) {
+      return res.status(400).json({ message: 'Durasi minimal 1 jam' });
+    }
+    // Cek bentrok jadwal di lantai yang sama
     const [conflicts] = await pool.query(
       `SELECT id FROM bookings 
-       WHERE court_id = ? AND booking_date = ? AND status IN ('pending', 'approved')
-       AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?) OR (start_time >= ? AND end_time <= ?))`,
-      [court_id, booking_date, end_time, start_time, end_time, start_time, start_time, end_time]
+       WHERE floor_id = ? AND booking_date = ? AND status IN ('pending', 'approved')
+       AND (start_time < ? AND end_time > ?)`,
+      [floor_id, booking_date, end_time, start_time]
     );
 
     if (conflicts.length > 0) {
-      return res.status(409).json({ message: 'Jadwal bentrok dengan booking lain' });
+      return res.status(409).json({ message: 'Jadwal bentrok! Lantai ini sudah terisi pada waktu tersebut.' });
     }
 
        // Get user name for notification
     const [userInfo] = await pool.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
-    const [courtInfo] = await pool.query('SELECT name FROM courts WHERE id = ?', [court_id]);
+     const [floorInfo] = await pool.query('SELECT name FROM floors WHERE id = ?', [floor_id]);
 
     const [result] = await pool.query(
-      'INSERT INTO bookings (user_id, court_id, booking_date, start_time, end_time, notes) VALUES (?, ?, ?, ?, ?, ?)',
-      [req.user.id, court_id, booking_date, start_time, end_time, notes || null]
+      'INSERT INTO bookings (user_id, floor_id, sport, booking_date, start_time, end_time, duration_hours, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, floor_id, sport, booking_date, start_time, end_time, duration_hours, notes || null]
     );
 
         // Create notification for admin
     const userName = userInfo[0]?.name || 'User';
-    const courtName = courtInfo[0]?.name || 'Lapangan';
+    const floorName = floorInfo[0]?.name || 'Lantai';
     await pool.query(
       'INSERT INTO notifications (message, type, related_id) VALUES (?, ?, ?)',
-      [`Booking baru dari ${userName} untuk ${courtName} pada ${booking_date} jam ${start_time}`, 'booking_new', result.insertId]
+       [`Booking baru dari ${userName} untuk ${sport} di ${floorName} pada ${booking_date} jam ${start_time}-${end_time}`, 'booking_new', result.insertId]
     );
 
     res.status(201).json({ message: 'Booking berhasil diajukan', bookingId: result.insertId });
@@ -82,8 +96,8 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/my', verifyToken, async (req, res) => {
   try {
     const [bookings] = await pool.query(
-      `SELECT b.*, c.name as court_name, c.type as court_type 
-       FROM bookings b JOIN courts c ON b.court_id = c.id 
+      `SELECT b.*, f.name as floor_name 
+       FROM bookings b JOIN floors f ON b.floor_id = f.id 
        WHERE b.user_id = ? ORDER BY b.created_at DESC`,
       [req.user.id]
     );
@@ -122,9 +136,9 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
 router.get('/all', verifyToken, isAdmin, async (req, res) => {
   try {
     const [bookings] = await pool.query(
-      `SELECT b.*, c.name as court_name, c.type as court_type, u.name as user_name, u.email as user_email
+      `SELECT b.*, f.name as floor_name, u.name as user_name, u.email as user_email
        FROM bookings b 
-       JOIN courts c ON b.court_id = c.id 
+       JOIN floors f ON b.floor_id = f.id 
        JOIN users u ON b.user_id = u.id
        ORDER BY b.created_at DESC`
     );
@@ -143,19 +157,19 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
     }
 
      const [booking] = await pool.query(
-      'SELECT b.*, c.name as court_name FROM bookings b JOIN courts c ON b.court_id = c.id WHERE b.id = ?',
+      'SELECT b.*, f.name as floor_name FROM bookings b JOIN floors f ON b.floor_id = f.id WHERE b.id = ?',
       [req.params.id]
     );
     if (booking.length === 0) return res.status(404).json({ message: 'Booking tidak ditemukan' });
     await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, req.params.id]);
     // Create user notification
     const statusText = status === 'approved' ? 'disetujui' : 'ditolak';
-    const courtName = booking[0].court_name;
+     const floorName = booking[0].floor_name;
     const bookingDate = booking[0].booking_date;
     const dateStr = typeof bookingDate === 'string' ? bookingDate.slice(0, 10) : new Date(bookingDate).toISOString().slice(0, 10);
     await pool.query(
       'INSERT INTO user_notifications (user_id, message, type, related_id) VALUES (?, ?, ?, ?)',
-      [booking[0].user_id, `Booking Anda untuk ${courtName} pada ${dateStr} telah ${statusText}`, `booking_${status}`, parseInt(req.params.id)]
+        [booking[0].user_id, `Booking ${booking[0].sport} di ${floorName} pada ${dateStr} telah ${statusText}`, `booking_${status}`, parseInt(req.params.id)]
     );
 
     res.json({ message: `Booking ${status}` });

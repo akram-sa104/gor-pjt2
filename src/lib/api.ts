@@ -26,15 +26,15 @@ export const api = {
       body: JSON.stringify(data),
     }),
   getProfile: () => request<User>('/auth/me'),
-  // Courts
-  getCourts: () => request<Court[]>('/bookings/courts'),
-  // Availability
-  getAvailability: (courtId: number, date: string) =>
-    request<{ start_time: string; end_time: string; status: string }[]>(
-      `/bookings/availability?court_id=${courtId}&date=${date}`
+// Floors & Sports
+  getFloors: () => request<Floor[]>('/bookings/floors'),
+    // Availability per floor
+  getAvailability: (floorId: number, date: string) =>
+    request<AvailabilitySlot[]>(
+      `/bookings/availability?floor_id=${floorId}&date=${date}`
     ),
   // Bookings
-  createBooking: (data: { court_id: number; booking_date: string; start_time: string; end_time: string; notes?: string }) =>
+   createBooking: (data: { floor_id: number; sport: string; booking_date: string; start_time: string; end_time: string; notes?: string }) =>
     request<{ message: string; bookingId: number }>('/bookings', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -143,20 +143,34 @@ export interface User {
   phone?: string;
   role: 'user' | 'admin';
 }
-export interface Court {
+export interface FloorSport {
+  id: number;
+  floor_id: number;
+  sport_name: string;
+  icon: string;
+}
+export interface Floor {
   id: number;
   name: string;
-  type: 'futsal' | 'badminton';
+  description: string;
   price_per_hour: number;
   is_active: boolean;
+   sports: FloorSport[];
+}
+export interface AvailabilitySlot {
+  start_time: string;
+  end_time: string;
+  sport: string;
+  status: string;
 }
 export interface BookingItem {
   id: number;
-  court_name: string;
-  court_type: string;
+   floor_name: string;
+  sport: string;
   booking_date: string;
   start_time: string;
   end_time: string;
+  duration_hours: number;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   notes?: string;
   created_at: string;

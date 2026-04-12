@@ -16,29 +16,40 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabel Courts (Lapangan)
-CREATE TABLE courts (
+-- Tabel Lantai (Floor)
+CREATE TABLE floors (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  type ENUM('futsal', 'badminton') NOT NULL,
+  description TEXT,
   price_per_hour DECIMAL(10,2) NOT NULL DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabel Bookings
+-- Tabel Olahraga per Lantai
+CREATE TABLE floor_sports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  floor_id INT NOT NULL,
+  sport_name VARCHAR(100) NOT NULL,
+  icon VARCHAR(50) DEFAULT 'goal',
+  FOREIGN KEY (floor_id) REFERENCES floors(id) ON DELETE CASCADE
+);
+
+-- Tabel Bookings (per lantai, bukan per lapangan)
 CREATE TABLE bookings (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  court_id INT NOT NULL,
+  floor_id INT NOT NULL,
+  sport VARCHAR(100) NOT NULL,
   booking_date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
+  duration_hours INT NOT NULL DEFAULT 1,
   status ENUM('pending', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (court_id) REFERENCES courts(id) ON DELETE CASCADE
+  FOREIGN KEY (floor_id) REFERENCES floors(id) ON DELETE CASCADE
 );
 
 -- Tabel Gallery
@@ -90,10 +101,16 @@ CREATE TABLE user_notifications (
 INSERT INTO users (name, email, phone, password, role) VALUES
 ('Admin GOR', 'admin@jasatirta2.co.id', '08123456789', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
 
--- Lapangan
-INSERT INTO courts (name, type, price_per_hour) VALUES
-('Lapangan Futsal A', 'futsal', 150000),
-('Lapangan Futsal B', 'futsal', 150000),
-('Lapangan Badminton 1', 'badminton', 75000),
-('Lapangan Badminton 2', 'badminton', 75000),
-('Lapangan Badminton 3', 'badminton', 75000);
+-- Lantai
+INSERT INTO floors (name, description, price_per_hour) VALUES
+('Lantai 1', 'Area serbaguna untuk yoga, senam, dan tenis meja', 100000),
+('Lantai 2', 'Lapangan utama untuk futsal, voli, badminton, dan basket', 150000);
+-- Olahraga per Lantai
+INSERT INTO floor_sports (floor_id, sport_name, icon) VALUES
+(1, 'Yoga', 'heart'),
+(1, 'Senam', 'activity'),
+(1, 'Tenis Meja', 'target'),
+(2, 'Futsal', 'goal'),
+(2, 'Voli', 'volleyball'),
+(2, 'Badminton', 'badminton'),
+(2, 'Basket', 'basketball');
