@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Guide from "./pages/Guide";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const AnimatedRoutes = () => {
           <Route path="/booking" element={<Booking />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/panduan" element={<Guide />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </WaterTransition>
