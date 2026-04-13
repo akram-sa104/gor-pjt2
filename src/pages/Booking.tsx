@@ -34,16 +34,49 @@ const Booking = () => {
   const [loading, setLoading] = useState(false);
   const [loadingFloors, setLoadingFloors] = useState(true);
 
+    const fallbackFloors: Floor[] = [
+    {
+      id: 1,
+      name: "Lantai 1",
+      description: "Area serbaguna untuk yoga, senam, dan tenis meja",
+      price_per_hour: 100000,
+      is_active: true,
+      sports: [
+        { id: 1, floor_id: 1, sport_name: "Yoga", icon: "heart" },
+        { id: 2, floor_id: 1, sport_name: "Senam", icon: "activity" },
+        { id: 3, floor_id: 1, sport_name: "Tenis Meja", icon: "target" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Lantai 2",
+      description: "Lapangan utama untuk futsal, voli, badminton, dan basket",
+      price_per_hour: 150000,
+      is_active: true,
+      sports: [
+        { id: 4, floor_id: 2, sport_name: "Futsal", icon: "goal" },
+        { id: 5, floor_id: 2, sport_name: "Voli", icon: "volleyball" },
+        { id: 6, floor_id: 2, sport_name: "Badminton", icon: "badminton" },
+        { id: 7, floor_id: 2, sport_name: "Basket", icon: "basketball" },
+      ],
+    },
+  ];
+
   useEffect(() => {
     api.getFloors()
       .then((data) => {
-          setFloors(data);
-        if (data.length > 0) {
-          setSelectedFloor(data[0].id);
-          if (data[0].sports.length > 0) setSelectedSport(data[0].sports[0].sport_name);
+          const floorsData = data.length > 0 ? data : fallbackFloors;
+        setFloors(floorsData);
+        if (floorsData.length > 0) {
+          setSelectedFloor(floorsData[0].id);
+          if (floorsData[0].sports.length > 0) setSelectedSport(floorsData[0].sports[0].sport_name);
         }
       })
-      .catch(() => toast.error("Gagal memuat data lantai"))
+        .catch(() => {
+        setFloors(fallbackFloors);
+        setSelectedFloor(fallbackFloors[0].id);
+        setSelectedSport(fallbackFloors[0].sports[0].sport_name);
+      })
       .finally(() => setLoadingFloors(false));
   }, []);
   
@@ -84,13 +117,19 @@ const Booking = () => {
     if (isTimeBooked(time)) return;
     if (!startTime || endTime) {
       // Start fresh selection
+       const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
       setStartTime(time);
-      setEndTime("");
+       setEndTime(`${endHour}:00`);
     } else {
-      // Selecting end time
-      if (time <= startTime) {
+      // Already have startTime, selecting end time to extend
+      if (time < startTime) {
+        // Clicked before start - reset to this slot (1 hour)
+        const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
         setStartTime(time);
-        setEndTime("");
+       setEndTime(`${endHour}:00`);
+      } else if (time === startTime) {
+        // Clicked same slot - keep as 1 hour
+        return;
       } else if (canSelectAsEnd(time)) {
         // End time = next hour of clicked slot
         const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");

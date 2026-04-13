@@ -45,10 +45,11 @@ const GallerySection = () => {
           const mapped = items.map((item) => ({
             src: getImageSrc(item.image_url),
             title: item.title || "Tanpa judul",
-            category: item.category,
+            category: (item.category === "hero" || item.category === "about") ? "exterior" : item.category,
           }));
           setGalleryItems(mapped);
-          const uniqueCats = ["Semua", ...Array.from(new Set(items.map((i) => i.category)))];
+          const displayCats = mapped.map((i) => i.category);
+          const uniqueCats = ["Semua", ...Array.from(new Set(displayCats))];
           setCategories(uniqueCats);
         } else {
           setGalleryItems(fallbackImages);
