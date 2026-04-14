@@ -21,6 +21,7 @@ const navLinks = [
   { label: "Fasilitas", href: "/#fasilitas" },
   { label: "Galeri", href: "/#galeri" },
   { label: "Booking", href: "/booking" },
+  { label: "Jadwal", href: "/jadwal" },
   { label: "Panduan", href: "/panduan" },
   { label: "Kontak", href: "/#kontak" },
 ];

@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Guide from "./pages/Guide";
+import WeeklySchedule from "./pages/WeeklySchedule";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const AnimatedRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/panduan" element={<Guide />} />
+          <Route path="/jadwal" element={<WeeklySchedule />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </WaterTransition>
