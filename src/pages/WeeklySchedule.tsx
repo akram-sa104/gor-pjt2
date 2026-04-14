@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin, Download, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { api, Floor, AvailabilitySlot } from "@/lib/api";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const timeSlots = [
   "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
@@ -62,6 +64,8 @@ const WeeklySchedule = () => {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [weekAvailability, setWeekAvailability] = useState<Record<string, AvailabilitySlot[]>>({});
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const scheduleRef = useRef<HTMLDivElement>(null);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
@@ -117,6 +121,47 @@ const WeeklySchedule = () => {
 
   const floor = floors.find((f) => f.id === selectedFloor);
   const isToday = (d: Date) => formatDate(d) === formatDate(new Date());
+
+  const handleExportImage = async () => {
+    if (!scheduleRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(scheduleRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      const link = document.createElement('a');
+      link.download = `jadwal-${floor?.name || 'gor'}-${formatShortDate(weekDates[0])}-${formatShortDate(weekDates[6])}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Export image failed:', err);
+    }
+    setExporting(false);
+  };
+  const handleExportPDF = async () => {
+    if (!scheduleRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(scheduleRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`jadwal-${floor?.name || 'gor'}-${formatShortDate(weekDates[0])}-${formatShortDate(weekDates[6])}.pdf`);
+    } catch (err) {
+      console.error('Export PDF failed:', err);
+    }
+    setExporting(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -181,10 +226,22 @@ const WeeklySchedule = () => {
             )}
           </div>
 
+ {/* Export buttons */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting || loading} className="gap-2">
+              <Download size={16} />
+              {exporting ? "Mengekspor..." : "Export PDF"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportImage} disabled={exporting || loading} className="gap-2">
+              <Image size={16} />
+              {exporting ? "Mengekspor..." : "Export Gambar"}
+            </Button>
+          </div>
+
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 mb-6 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/40" />
+              <div className="w-4 h-4 rounded bg-accent/20 border border-accent/40" />
               <span className="text-muted-foreground">Tersedia</span>
             </div>
             <div className="flex items-center gap-2">
@@ -194,7 +251,7 @@ const WeeklySchedule = () => {
           </div>
 
           {/* Schedule grid */}
-          <div className="overflow-x-auto">
+           <div className="overflow-x-auto" ref={scheduleRef}>
             <div className="min-w-[800px]">
               {/* Header */}
               <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-1 mb-1">
@@ -237,7 +294,7 @@ const WeeklySchedule = () => {
                           className={`rounded-lg p-2 text-center text-xs transition-colors ${
                             booked
                               ? "bg-destructive/15 border border-destructive/30 text-destructive"
-                              : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                              : "bg-accent/10 border border-accent/20 text-accent-foreground"
                           }`}
                           title={
                             booked && info
