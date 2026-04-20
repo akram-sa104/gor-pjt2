@@ -115,26 +115,24 @@ const Booking = () => {
   };
   const handleTimeClick = (time: string) => {
     if (isTimeBooked(time)) return;
-    if (!startTime || endTime) {
-      // Start fresh selection
-       const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
+    
+    if (!startTime) {
+      // No start time yet - set it and default end time to 1 hour later
+      const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
       setStartTime(time);
-       setEndTime(`${endHour}:00`);
-    } else {
-      // Already have startTime, selecting end time to extend
-      if (time < startTime) {
-        // Clicked before start - reset to this slot (1 hour)
-        const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
-        setStartTime(time);
-       setEndTime(`${endHour}:00`);
-      } else if (time === startTime) {
-        // Clicked same slot - keep as 1 hour
-        return;
-      } else if (canSelectAsEnd(time)) {
-        // End time = next hour of clicked slot
-        const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
-        setEndTime(`${endHour}:00`);
-      }
+      setEndTime(`${endHour}:00`);
+    } else if (time < startTime) {
+      // Clicked before start - reset to this slot (1 hour)
+      const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
+      setStartTime(time);
+      setEndTime(`${endHour}:00`);
+    } else if (time === startTime) {
+      // Clicked same slot - keep as 1 hour
+      return;
+    } else if (canSelectAsEnd(time)) {
+      // Extending the end time - next hour of clicked slot
+      const endHour = String(parseInt(time.split(":")[0]) + 1).padStart(2, "0");
+      setEndTime(`${endHour}:00`);
     }
   };
   const getDurationHours = () => {
