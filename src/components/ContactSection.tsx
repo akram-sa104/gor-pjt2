@@ -48,7 +48,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold text-foreground">Alamat</h4>
-                  <p className="text-sm text-muted-foreground">GOR Perum Jasa Tirta II<br />Jatiluhur, Purwakarta, Jawa Barat</p>
+                  <p className="text-sm text-muted-foreground">Jasa Tirta II-Sport Center<br />Jatiluhur, Purwakarta, Jawa Barat</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
