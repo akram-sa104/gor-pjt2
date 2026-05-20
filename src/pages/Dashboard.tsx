@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2, Settings, Star } from "lucide-react";
+import { CalendarDays, Clock, LogOut, User, History, XCircle, Loader2, Settings, Star, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { api, BookingItem } from "@/lib/api";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import EditProfileForm from "@/components/EditProfileForm";
 import ReviewForm from "@/components/ReviewForm";
+import RescheduleDialog from "@/components/RescheduleDialog";
 
 const statusConfig = {
   pending: { label: "Pending", className: "bg-warning/10 text-warning" },
@@ -29,6 +30,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const [reviewedIds, setReviewedIds] = useState<Set<number>>(new Set());
+    const [reschedulingId, setReschedulingId] = useState<number | null>(null);
+  const refreshBookings = () => {
+    api.getMyBookings().then(setBookings).catch(() => {});
+  };
 
  useEffect(() => {
     if (!user) {
@@ -130,9 +135,14 @@ const Dashboard = () => {
                         </td>
                         <td className="py-3 px-4">
                           {b.status === "pending" && (
-                            <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
-                              <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
-                            </Button>
+                                <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => setReschedulingId(b.id)} className="text-primary hover:text-primary hover:bg-primary/10 h-8">
+                                <Pencil className="h-3.5 w-3.5 mr-1" /> Ubah
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => cancelBooking(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8">
+                                <XCircle className="h-3.5 w-3.5 mr-1" /> Batal
+                              </Button>
+                            </div>
                           )}
                           {b.status === "approved" && !reviewedIds.has(b.id) && (
                             <Button variant="ghost" size="sm" onClick={() => setReviewingId(reviewingId === b.id ? null : b.id)} className="text-warning hover:text-warning hover:bg-warning/10 h-8">
@@ -165,6 +175,19 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+          {reschedulingId !== null && (() => {
+          const b = bookings.find((x) => x.id === reschedulingId);
+          if (!b) return null;
+          return (
+            <RescheduleDialog
+              booking={b}
+              floorId={b.floor_id}
+              open={true}
+              onClose={() => setReschedulingId(null)}
+              onSuccess={refreshBookings}
+            />
+          );
+        })()}
       </>
     );
   };

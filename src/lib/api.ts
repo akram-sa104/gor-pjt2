@@ -42,6 +42,11 @@ export const api = {
   getMyBookings: () => request<BookingItem[]>('/bookings/my'),
   cancelBooking: (id: number) =>
     request<{ message: string }>(`/bookings/${id}/cancel`, { method: 'PATCH' }),
+    rescheduleBooking: (id: number, data: { booking_date: string; start_time: string; end_time: string }) =>
+    request<{ message: string }>(`/bookings/${id}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
   // Admin
   getAllBookings: () => request<AdminBookingItem[]>('/bookings/all'),
   updateBookingStatus: (id: number, status: 'approved' | 'rejected') =>
@@ -165,7 +170,8 @@ export interface AvailabilitySlot {
 }
 export interface BookingItem {
   id: number;
-   floor_name: string;
+  floor_id: number;
+  floor_name: string;
   sport: string;
   booking_date: string;
   start_time: string;

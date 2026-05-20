@@ -132,7 +132,52 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== SEMUA BOOKING (ADMIN) ====================
+// ==================== RESCHEDULE BOOKING (USER, pending only) ====================
+router.patch('/:id/reschedule', verifyToken, async (req, res) => {
+  try {
+    const { booking_date, start_time, end_time } = req.body;
+    if (!booking_date || !start_time || !end_time) {
+      return res.status(400).json({ message: 'Tanggal dan jam wajib diisi' });
+    }
+    const [rows] = await pool.query(
+      'SELECT * FROM bookings WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Booking tidak ditemukan' });
+    if (rows[0].status !== 'pending') {
+      return res.status(400).json({ message: 'Hanya booking pending yang bisa diubah' });
+    }
+    const startHour = parseInt(start_time.split(':')[0]);
+    const endHour = parseInt(end_time.split(':')[0]);
+    const duration_hours = endHour - startHour;
+    if (duration_hours < 1) {
+      return res.status(400).json({ message: 'Durasi minimal 1 jam' });
+    }
+    const [conflicts] = await pool.query(
+      `SELECT id FROM bookings 
+       WHERE floor_id = ? AND booking_date = ? AND status IN ('pending','approved')
+       AND id != ? AND (start_time < ? AND end_time > ?)`,
+      [rows[0].floor_id, booking_date, req.params.id, end_time, start_time]
+    );
+    if (conflicts.length > 0) {
+      return res.status(409).json({ message: 'Jadwal bentrok dengan booking lain' });
+    }
+    await pool.query(
+      'UPDATE bookings SET booking_date = ?, start_time = ?, end_time = ?, duration_hours = ? WHERE id = ?',
+      [booking_date, start_time, end_time, duration_hours, req.params.id]
+    );
+    const [userInfo] = await pool.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+    await pool.query(
+      'INSERT INTO notifications (message, type, related_id) VALUES (?, ?, ?)',
+      [`${userInfo[0]?.name || 'User'} mengubah jadwal booking #${req.params.id} menjadi ${booking_date} ${start_time}-${end_time}`, 'booking_new', parseInt(req.params.id)]
+    );
+    res.json({ message: 'Booking berhasil diubah' });
+  } catch (error) {
+    console.error('Reschedule error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/all', verifyToken, isAdmin, async (req, res) => {
   try {
     const [bookings] = await pool.query(
