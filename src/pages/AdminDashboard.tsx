@@ -44,21 +44,28 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
+  const [statsRange, setStatsRange] = useState<number>(6);
   useEffect(() => {
     if (!user || user.role !== "admin") {
       navigate("/login");
       return;
     }
-    Promise.all([api.getAllBookings(), api.getStats()])
+    Promise.all([api.getAllBookings(), api.getStats(statsRange)])
       .then(([b, s]) => { setBookings(b); setStats(s); })
       .catch(() => toast.error("Gagal memuat data"))
       .finally(() => setLoading(false));
   }, [user, navigate]);
-  const updateStatus = async (id: number, status: "approved" | "rejected") => {
+   // Refetch stats when range changes (after initial load)
+  useEffect(() => {
+    if (loading) return;
+    api.getStats(statsRange).then(setStats).catch(() => toast.error("Gagal memuat statistik"));
+  }, [statsRange]);
+  const updateStatus = async (id: number, status: "approved" | "rejected" | "cancelled") => {
     try {
       await api.updateBookingStatus(id, status);
       setBookings(bookings.map((b) => (b.id === id ? { ...b, status } : b)));
-      toast.success(`Booking ${status === "approved" ? "disetujui" : "ditolak"}.`);
+      const label = status === "approved" ? "disetujui" : status === "rejected" ? "ditolak" : "dibatalkan";
+      toast.success(`Booking ${label}.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal update status";
       toast.error(message || "Gagal update status");
@@ -241,6 +248,20 @@ const AdminDashboard = () => {
                               </Button>
                             </div>
                           )}
+                              {b.status === "approved" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Batalkan booking ${b.user_name} di ${b.floor_name}? User akan diberi tahu.`)) {
+                                  updateStatus(b.id, "cancelled");
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Batalkan
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -262,7 +283,21 @@ const AdminDashboard = () => {
          return <AdminUserList />;
       case "pesan":
         return <AdminMessageCenter />;
-      case "statistik":
+       case "statistik": {
+        const monthly = stats?.monthlyBookings || [];
+        const max = Math.max(...monthly.map((x) => x.count), 1);
+        const rangeOptions = [
+          { value: 3, label: "3 Bulan" },
+          { value: 6, label: "6 Bulan" },
+          { value: 12, label: "1 Tahun" },
+          { value: 24, label: "2 Tahun" },
+          { value: 36, label: "3 Tahun" },
+        ];
+        const fmtMonth = (m: string) => {
+          const [y, mo] = m.split("-");
+          const names = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+          return `${names[parseInt(mo) - 1]} ${y.slice(2)}`;
+        };
         return (
           <>
             <h1 className="text-2xl font-bold text-foreground mb-6">Statistik</h1>
@@ -274,30 +309,106 @@ const AdminDashboard = () => {
                 </div>
               ))}
             </div>
-            <div className="bg-card rounded-xl shadow-corporate p-6">
-              <h2 className="font-semibold text-foreground mb-4">Statistik Bulanan</h2>
-              <div className="flex items-end gap-2 h-48">
-                {(stats?.monthlyBookings || []).map((m, i) => {
-                  const max = Math.max(...(stats?.monthlyBookings || []).map((x) => x.count), 1);
-                  return (
-                    <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+              <div className="bg-card rounded-xl shadow-corporate p-6 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="font-semibold text-foreground">Statistik Bulanan</h2>
+                <div className="flex flex-wrap gap-2">
+                  {rangeOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setStatsRange(opt.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        statsRange === opt.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Accumulation summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="bg-secondary rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Total dalam Rentang</p>
+                  <p className="text-xl font-bold text-foreground">{stats?.rangeTotal ?? 0}</p>
+                </div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Disetujui</p>
+                  <p className="text-xl font-bold text-success">{stats?.rangeApproved ?? 0}</p>
+                </div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Rata-rata/Bulan</p>
+                  <p className="text-xl font-bold text-primary">
+                    {monthly.length ? Math.round((stats?.rangeTotal ?? 0) / monthly.length) : 0}
+                  </p>
+                </div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Bulan Tertinggi</p>
+                  <p className="text-xl font-bold text-accent">{max}</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <div
+                  className="flex items-end gap-2 h-56 min-w-full"
+                  style={{ minWidth: `${Math.max(monthly.length * 48, 100)}px` }}
+                >
+                  {monthly.map((m, i) => (
+                    <div key={m.month} className="flex-1 min-w-[40px] flex flex-col items-center gap-1 group">
+                      <div className="text-xs text-foreground font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        {m.count}
+                      </div>
                       <motion.div
                         initial={{ height: 0 }}
                         animate={{ height: `${(m.count / max) * 100}%` }}
-                        transition={{ delay: i * 0.1, duration: 0.5 }}
-                        className="w-full gradient-primary rounded-t-md min-h-[4px]"
+                        transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                        className="w-full gradient-primary rounded-t-md min-h-[4px] cursor-pointer hover:opacity-80"
+                        title={`${m.month}: ${m.count} booking`}
                       />
-                      <span className="text-xs text-muted-foreground">{m.month.slice(5)}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{fmtMonth(m.month)}</span>
                     </div>
-                  );
-                })}
-                {(!stats?.monthlyBookings || stats.monthlyBookings.length === 0) && (
-                  <p className="text-muted-foreground text-sm w-full text-center">Belum ada data</p>
-                )}
+                     ))}
+                  {monthly.length === 0 && (
+                    <p className="text-muted-foreground text-sm w-full text-center">Belum ada data</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Monthly breakdown table */}
+            <div className="bg-card rounded-xl shadow-corporate overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <h2 className="font-semibold text-foreground">Rincian per Bulan</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-secondary">
+                      <th className="text-left py-2 px-4 font-medium text-muted-foreground">Bulan</th>
+                      <th className="text-right py-2 px-4 font-medium text-muted-foreground">Total</th>
+                      <th className="text-right py-2 px-4 font-medium text-success">Disetujui</th>
+                      <th className="text-right py-2 px-4 font-medium text-warning">Pending</th>
+                      <th className="text-right py-2 px-4 font-medium text-destructive">Tolak/Batal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...monthly].reverse().map((m) => (
+                      <tr key={m.month} className="border-b border-border">
+                        <td className="py-2 px-4 text-foreground">{fmtMonth(m.month)}</td>
+                        <td className="py-2 px-4 text-right text-foreground font-medium">{m.count}</td>
+                        <td className="py-2 px-4 text-right text-success">{m.approved ?? 0}</td>
+                        <td className="py-2 px-4 text-right text-warning">{m.pending ?? 0}</td>
+                        <td className="py-2 px-4 text-right text-destructive">{m.rejected ?? 0}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </>
         );
+      }
+      
       case "pengaturan":
         return (
           <>

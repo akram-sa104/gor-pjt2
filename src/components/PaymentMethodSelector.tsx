@@ -16,7 +16,7 @@ const PaymentMethodSelector = () => {
       <div className="flex items-start gap-2 bg-warning/10 rounded-lg p-3">
         <Info className="h-4 w-4 text-warning mt-0.5 shrink-0" />
         <p className="text-xs text-warning">
-          Silakan datang dan lakukan pembayaran cash di lokasi.
+          Silakan datang 1×24 jam sebelum waktu booking dan lakukan pembayaran cash di lokasi.
         </p>
       </div>
     </div>

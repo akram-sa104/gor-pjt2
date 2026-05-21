@@ -49,12 +49,13 @@ export const api = {
     }),
   // Admin
   getAllBookings: () => request<AdminBookingItem[]>('/bookings/all'),
-  updateBookingStatus: (id: number, status: 'approved' | 'rejected') =>
+  updateBookingStatus: (id: number, status: 'approved' | 'rejected' | 'cancelled') =>
     request<{ message: string }>(`/bookings/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
-  getStats: () => request<AdminStats>('/bookings/stats'),
+  getStats: (months: number = 6) =>
+    request<AdminStats>(`/bookings/stats?months=${months}`),
 
     changePassword: (currentPassword: string, newPassword: string) =>
     request<{ message: string }>('/auth/change-password', {
@@ -189,8 +190,12 @@ export interface AdminStats {
   totalBookings: number;
   pendingBookings: number;
   approvedBookings: number;
+  rejectedBookings?: number;
   totalUsers: number;
-  monthlyBookings: { month: string; count: number }[];
+  monthlyBookings: { month: string; count: number; approved?: number; pending?: number; rejected?: number }[];
+  rangeMonths?: number;
+  rangeTotal?: number;
+  rangeApproved?: number;
 }
 export interface UserItem {
   id: number;

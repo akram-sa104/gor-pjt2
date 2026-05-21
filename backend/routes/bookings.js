@@ -197,8 +197,8 @@ router.get('/all', verifyToken, isAdmin, async (req, res) => {
 router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Status harus approved atau rejected' });
+    if (!['approved', 'rejected', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Status harus approved, rejected, atau cancelled' });
     }
 
      const [booking] = await pool.query(
@@ -208,8 +208,8 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
     if (booking.length === 0) return res.status(404).json({ message: 'Booking tidak ditemukan' });
     await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, req.params.id]);
     // Create user notification
-    const statusText = status === 'approved' ? 'disetujui' : 'ditolak';
-     const floorName = booking[0].floor_name;
+    const statusText = status === 'approved' ? 'disetujui' : status === 'rejected' ? 'ditolak' : 'dibatalkan oleh admin';
+    const floorName = booking[0].floor_name;
     const bookingDate = booking[0].booking_date;
     const dateStr = typeof bookingDate === 'string' ? bookingDate.slice(0, 10) : new Date(bookingDate).toISOString().slice(0, 10);
     await pool.query(
@@ -227,26 +227,58 @@ router.patch('/:id/status', verifyToken, isAdmin, async (req, res) => {
 // ==================== STATISTIK (ADMIN) ====================
 router.get('/stats', verifyToken, isAdmin, async (req, res) => {
   try {
+    const months = Math.min(parseInt(req.query.months) || 6, 60);
     const [total] = await pool.query('SELECT COUNT(*) as count FROM bookings');
     const [pending] = await pool.query("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'");
     const [approved] = await pool.query("SELECT COUNT(*) as count FROM bookings WHERE status = 'approved'");
+    const [rejected] = await pool.query("SELECT COUNT(*) as count FROM bookings WHERE status IN ('rejected','cancelled')");
     const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
 
     // Booking per bulan (6 bulan terakhir)
-    const [monthly] = await pool.query(
-      `SELECT DATE_FORMAT(booking_date, '%Y-%m') as month, COUNT(*) as count 
-       FROM bookings WHERE booking_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-       GROUP BY month ORDER BY month`
+       const [monthlyRaw] = await pool.query(
+      `SELECT DATE_FORMAT(booking_date, '%Y-%m') as month,
+              COUNT(*) as count,
+              SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) as approved,
+              SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
+              SUM(CASE WHEN status IN ('rejected','cancelled') THEN 1 ELSE 0 END) as rejected
+       FROM bookings
+       WHERE booking_date >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+       GROUP BY month ORDER BY month`,
+      [months]
     );
+
+     // Fill missing months with 0
+    const map = new Map(monthlyRaw.map(r => [r.month, r]));
+    const monthly = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const r = map.get(key);
+      monthly.push({
+        month: key,
+        count: r ? Number(r.count) : 0,
+        approved: r ? Number(r.approved) : 0,
+        pending: r ? Number(r.pending) : 0,
+        rejected: r ? Number(r.rejected) : 0,
+      });
+    }
+    const rangeTotal = monthly.reduce((s, m) => s + m.count, 0);
+    const rangeApproved = monthly.reduce((s, m) => s + m.approved, 0);
 
     res.json({
       totalBookings: total[0].count,
       pendingBookings: pending[0].count,
       approvedBookings: approved[0].count,
+      rejectedBookings: rejected[0].count,
       totalUsers: users[0].count,
-      monthlyBookings: monthly
+      monthlyBookings: monthly,
+      rangeMonths: months,
+      rangeTotal,
+      rangeApproved,
     });
   } catch (error) {
+    console.error('Stats error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
